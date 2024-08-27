@@ -18,6 +18,8 @@ executable('renderer',
     dependencies: [
         dependency('sdl2')
     ],
+    c_pch: 'src/pch.h',
     sources: [
-        'src/main.c',
+        'src/Main.c',
+        'src/Display.c',
     ])
