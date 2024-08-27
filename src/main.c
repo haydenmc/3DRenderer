@@ -119,11 +119,8 @@ void ClearColorBuffer(uint32_t color)
     }
 }
 
-void DrawGrid(void)
+void DrawGrid(uint32_t gridSize, uint32_t gridColor)
 {
-    uint32_t gridSize = 10;
-    uint32_t gridColor = 0xFF333333;
-
     for (int y = 0; y < g_windowHeight; y += gridSize)
     {
         for (int x = 0; x < g_windowWidth; x += gridSize)
@@ -133,12 +130,29 @@ void DrawGrid(void)
     }
 }
 
+void DrawRect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color)
+{
+    // Top and bottom
+    for (uint32_t i = 0; i <= width; ++i)
+    {
+        g_colorBuffer[(g_windowWidth * y) + x + i] = color;
+        g_colorBuffer[(g_windowWidth * (y + height)) + x + i] = color;
+    }
+    // Left and right
+    for (uint32_t i = 0; i <= height; ++i)
+    {
+        g_colorBuffer[(g_windowWidth * (y + i)) + x] = color;
+        g_colorBuffer[(g_windowWidth * (y + i)) + x + width] = color;
+    }
+}
+
 void Render(void)
 {
     SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255);
     SDL_RenderClear(g_renderer);
 
-    DrawGrid();
+    DrawGrid(10, 0xFF333333);
+    DrawRect(30, 30, 300, 200, 0xFFFF0000);
     RenderColorBuffer();
     ClearColorBuffer(0xFF000000);
 
