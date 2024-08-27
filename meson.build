@@ -1,6 +1,6 @@
 project('renderer', 'c',
     default_options: [
-        'warning_level=3', # All warnings enabled.
+        'warning_level=3',          # All warnings enabled.
         'werror=true',              # Warnings as errors
         'c_std=c17',                # C99 standard
     ])
