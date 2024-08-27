@@ -47,27 +47,35 @@ bool InitializeWindow(void)
     return true;
 }
 
-void DrawGrid(uint32_t gridSize, uint32_t gridColor)
+void DrawGrid(int gridSize, uint32_t gridColor)
 {
     for (int y = 0; y < g_windowHeight; y += gridSize)
     {
         for (int x = 0; x < g_windowWidth; x += gridSize)
         {
-            g_colorBuffer[(g_windowWidth * y) + x] = gridColor;
+            DrawPixel(x, y, gridColor);
         }
     }
 }
 
-void DrawRect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color)
+void DrawPixel(int x, int y, uint32_t color)
+{
+    if ((x < g_windowWidth) && (y < g_windowHeight))
+    {
+        g_colorBuffer[(g_windowWidth * y) + x] = color;
+    }
+}
+
+void DrawRect(int x, int y, int width, int height, uint32_t color)
 {
     // Top and bottom
-    for (uint32_t i = 0; i <= width; ++i)
+    for (int i = 0; i <= width; ++i)
     {
         g_colorBuffer[(g_windowWidth * y) + x + i] = color;
         g_colorBuffer[(g_windowWidth * (y + height)) + x + i] = color;
     }
     // Left and right
-    for (uint32_t i = 0; i <= height; ++i)
+    for (int i = 0; i <= height; ++i)
     {
         g_colorBuffer[(g_windowWidth * (y + i)) + x] = color;
         g_colorBuffer[(g_windowWidth * (y + i)) + x + width] = color;
@@ -96,7 +104,7 @@ void ClearColorBuffer(uint32_t color)
     {
         for (int x = 0; x < g_windowWidth; ++x)
         {
-            g_colorBuffer[(g_windowWidth * y) + x] = color;
+            DrawPixel(x, y, color);
         }
     }
 }
