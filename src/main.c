@@ -1,8 +1,15 @@
 #include "pch.h"
 #include "Display.h"
+#include "Vector.h"
+
+// Defines
+#define NUM_CUBE_POINTS (9 * 9 * 9)
 
 // Globals
 bool g_isRunning = false;
+vec3_t g_cubePoints[NUM_CUBE_POINTS]; // 9x9x9 cube
+vec2_t g_projectedPoints[NUM_CUBE_POINTS];
+float g_fovFactor = 128;
 
 void Setup(void)
 {
@@ -14,6 +21,20 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
+
+    int pointCount = 0;
+    for (float x = -1; x <= 1; x += 0.25)
+    {
+        for (float y = -1; y <= 1; y += 0.25)
+        {
+            for (float z = -1; z <= 1; z += 0.25)
+            {
+                vec3_t newPoint = { .x = x, .y = y, .z = z };
+                g_cubePoints[pointCount] = newPoint;
+                ++pointCount;
+            }
+        }
+    }
 }
 
 void ProcessInput(void)
@@ -35,19 +56,42 @@ void ProcessInput(void)
     }
 }
 
+vec2_t Project(vec3_t point)
+{
+    vec2_t projectedPoint = {
+        .x = (g_fovFactor * point.x),
+        .y = (g_fovFactor * point.y)
+    };
+    return projectedPoint;
+}
+
 void Update(void)
 {
-    // TODO
+    for (int i = 0; i < NUM_CUBE_POINTS; ++i)
+    {
+        vec3_t point = g_cubePoints[i];
+        vec2_t projectedPoint = Project(point);
+        g_projectedPoints[i] = projectedPoint;
+    }
 }
 
 void Render(void)
 {
-    SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255);
-    SDL_RenderClear(g_renderer);
-
     DrawGrid(10, 0xFF333333);
-    DrawRect(30, 30, 300, 200, 0xFFFF0000);
+
+    for (int i = 0; i < NUM_CUBE_POINTS; ++i)
+    {
+        vec2_t projectedPoint = g_projectedPoints[i];
+        DrawFilledRect(
+            (int)(projectedPoint.x + (g_windowWidth / 2)),
+            (int)(projectedPoint.y + (g_windowHeight / 2)),
+            4,
+            4,
+            0xFFFFFF00
+        );
+    }
     RenderColorBuffer();
+
     ClearColorBuffer(0xFF000000);
 
     SDL_RenderPresent(g_renderer);

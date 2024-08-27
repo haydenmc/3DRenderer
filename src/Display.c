@@ -66,19 +66,30 @@ void DrawPixel(int x, int y, uint32_t color)
     }
 }
 
+void DrawFilledRect(int x, int y, int width, int height, uint32_t color)
+{
+    for (int i = 0; i < height; ++i)
+    {
+        for (int j = 0; j < width; ++j)
+        {
+            DrawPixel((x + j), (y + i), color);
+        }
+    }
+}
+
 void DrawRect(int x, int y, int width, int height, uint32_t color)
 {
     // Top and bottom
     for (int i = 0; i <= width; ++i)
     {
-        g_colorBuffer[(g_windowWidth * y) + x + i] = color;
-        g_colorBuffer[(g_windowWidth * (y + height)) + x + i] = color;
+        DrawPixel((x + i), y, color);
+        DrawPixel((x + i), (y + height), color);
     }
     // Left and right
     for (int i = 0; i <= height; ++i)
     {
-        g_colorBuffer[(g_windowWidth * (y + i)) + x] = color;
-        g_colorBuffer[(g_windowWidth * (y + i)) + x + width] = color;
+        DrawPixel(x, (y + i), color);
+        DrawPixel((x + width), (y + i), color);
     }
 }
 

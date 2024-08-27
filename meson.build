@@ -22,4 +22,5 @@ executable('renderer',
     sources: [
         'src/Main.c',
         'src/Display.c',
+        'src/Vector.c',
     ])

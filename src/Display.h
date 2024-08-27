@@ -10,6 +10,7 @@ extern SDL_Texture* g_colorBufferTexture;
 bool InitializeWindow(void);
 void DrawGrid(int gridSize, uint32_t gridColor);
 void DrawPixel(int x, int y, uint32_t color);
+void DrawFilledRect(int x, int y, int width, int height, uint32_t color);
 void DrawRect(int x, int y, int width, int height, uint32_t color);
 void RenderColorBuffer(void);
 void ClearColorBuffer(uint32_t color);
