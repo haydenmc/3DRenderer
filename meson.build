@@ -1,6 +1,6 @@
 project('renderer', 'c',
     default_options: [
-        'warning_level=everything', # All warnings enabled.
+        'warning_level=3', # All warnings enabled.
         'werror=true',              # Warnings as errors
         'c_std=c17',                # C99 standard
     ])
@@ -16,7 +16,7 @@ sdl2_wrap = subproject('sdl2',
 
 executable('renderer',
     dependencies: [
-        sdl2_wrap.get_variable('sdl2_dep')
+        dependency('sdl2')
     ],
     sources: [
         'src/main.c',
