@@ -14,9 +14,14 @@ sdl2_wrap = subproject('sdl2',
         'warning_level=1',
     ])
 
+# Other dependencies
+# cc = meson.get_compiler('c')
+# math_dep = cc.find_library('m', required : true)
+
+# Executable
 executable('renderer',
     dependencies: [
-        dependency('sdl2')
+        dependency('sdl2'),
     ],
     c_pch: 'src/pch.h',
     sources: [

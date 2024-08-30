@@ -42,6 +42,93 @@ as used by OpenGL.
 
 _Illustration from https://www.oreilly.com/library/view/learn-arcore/9781788830409_
 
+## Transformation Matrices
+
+### Rotation
+
+#### Applying a rotation to a 2D vector using trigonometry functions
+
+Goal: Rotate a 2D vector $(x, y)$ around the origin by angle $\beta$ to get
+$(x', y')$.
+
+Let $\alpha$ represent the angle from the origin to $(x, y)$.
+
+Let $r$ represent the hypotenuse of the triangle, or radius of the rotation.
+
+![Illustration of the triangle formed between the origin and a given 2D vector](/images/2d-vector-angle.png)
+
+Since $\cos(\alpha) = \frac{x}{r}$, $x = r \times \cos(\alpha)$
+
+Since $\sin(\alpha) = \frac{y}{r}$, $y = r \times \sin(\alpha)$
+
+After applying the angle $\beta$, the new coordinates can be calculated:
+
+![Illustration of the rotated vector's new triangle](/images/2d-vector-rotated.png)
+
+$\cos(\alpha + \beta) = \frac{x'}{r}$, so $x' = r \times \cos(\alpha + \beta)$
+
+$\sin(\alpha + \beta) = \frac{y'}{r}$, so $y' = r \times \sin(\alpha + \beta)$
+
+Trig functions that add two values can be expanded using the
+_angle addition formula_:
+
+$$
+x' = r\cos(\alpha + \beta) \\
+x' = r(\cos{\alpha} \cos{\beta} - \sin{\alpha} \sin{\beta}) \\
+x' = r \cos{\alpha} \cos{\beta} - r \sin{\alpha} \sin{\beta}
+$$
+
+You can substitute $r \cos{\alpha}$ with $x$, and $r \sin{\alpha}$ with $y$:
+
+$$
+x' = x \cos{\beta} - y \sin{\beta}
+$$
+
+Similarly,
+
+$$
+y' = r \sin(\alpha + \beta) \\
+y' = r(\sin{\alpha} \cos{\beta} + \cos{\alpha} \sin{\beta}) \\
+y' = r \sin{\alpha} \cos{\beta} + r \cos{\alpha} \sin{\beta} \\
+y' = y \cos{\beta} + x \sin{\beta}
+$$
+
+These are the formulas that are used by a rotation transformation matrix.
+
+The same principle applies to 3 dimensions, but with one dimension at a time:
+
+```c
+vec3_t Vec3RotateX(vec3_t v, float angle)
+{
+    vec3_t rotated_vector = {
+        .x = v.x,
+        .y = v.y * cosf(angle) - v.z * sinf(angle),
+        .z = v.y * sinf(angle) + v.z * cosf(angle),
+    };
+    return rotated_vector;
+}
+
+vec3_t Vec3RotateY(vec3_t v, float angle)
+{
+    vec3_t rotated_vector = {
+        .x = v.x * cosf(angle) - v.z * sinf(angle),
+        .y = v.y,
+        .z = v.x * sinf(angle) + v.z * cosf(angle),
+    };
+    return rotated_vector;
+}
+
+vec3_t Vec3RotateZ(vec3_t v, float angle)
+{
+    vec3_t rotated_vector = {
+        .x = v.x * cosf(angle) - v.y * sinf(angle),
+        .y = v.x * sinf(angle) + v.y * cosf(angle),
+        .z = v.z,
+    };
+    return rotated_vector;
+}
+```
+
 # Progress
 
 Here's where I take videos of significant milestones to look back on the
@@ -54,3 +141,11 @@ A cube made up of a cloud of points with simple perspective projection applied.
 https://github.com/user-attachments/assets/7b7784bc-4cf1-41ff-a7f4-16496ee17e95
 
 _[01.Simple-Perspective-Cube-Points.mp4](/videos/01.Simple-Perspective-Cube-Points.mp4)_
+
+## 02. Simple Rotation Transformation
+
+Rotating the cube with simple rotation transformations.
+
+https://github.com/user-attachments/assets/d292fcb0-5ef9-456a-81c1-ded31994804e
+
+_[02.Simple-Vector-Rotation-Transformation.mp4](/videos/02.Simple-Vector-Rotation-Transformation.mp4)_

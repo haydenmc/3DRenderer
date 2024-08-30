@@ -11,6 +11,7 @@ vec3_t g_cubePoints[NUM_CUBE_POINTS]; // 9x9x9 cube
 vec2_t g_projectedPoints[NUM_CUBE_POINTS];
 float g_fovFactor = 640;
 vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = -5 };
+vec3_t g_cubeRotation = { .x = 0, .y = 0, .z = 0 };
 
 void Setup(void)
 {
@@ -68,14 +69,22 @@ vec2_t Project(vec3_t point)
 
 void Update(void)
 {
+    g_cubeRotation.x += 0.01f;
+    g_cubeRotation.y += 0.01f;
+    g_cubeRotation.z += 0.01f;
+
     for (int i = 0; i < NUM_CUBE_POINTS; ++i)
     {
         vec3_t point = g_cubePoints[i];
 
-        // HACK: move the points away from the camera
-        point.z -= g_cameraPosition.z;
+        vec3_t transformedPoint = Vec3RotateX(point, g_cubeRotation.x);
+        transformedPoint = Vec3RotateY(transformedPoint, g_cubeRotation.y);
+        transformedPoint = Vec3RotateZ(transformedPoint, g_cubeRotation.z);
 
-        vec2_t projectedPoint = Project(point);
+        // HACK: Translate the points away from the camera
+        transformedPoint.z -= g_cameraPosition.z;
+
+        vec2_t projectedPoint = Project(transformedPoint);
         g_projectedPoints[i] = projectedPoint;
     }
 }
