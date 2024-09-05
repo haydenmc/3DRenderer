@@ -107,23 +107,14 @@ void Render(void)
     for (int i = 0; i < N_MESH_FACES; ++i)
     {
         triangle_t triangleToRender = g_trianglesToRender[i];
-        DrawFilledRect(
+        DrawTriangle(
             (int)triangleToRender.points[0].x,
             (int)triangleToRender.points[0].y,
-            3,
-            3,
-            0xFFFFFF00);
-        DrawFilledRect((int)triangleToRender.points[1].x,
+            (int)triangleToRender.points[1].x,
             (int)triangleToRender.points[1].y,
-            3,
-            3,
-            0xFFFFFF00);
-        DrawFilledRect(
             (int)triangleToRender.points[2].x,
             (int)triangleToRender.points[2].y,
-            3,
-            3,
-            0xFFFFFF00);
+            0xFF00FF00);
     }
     RenderColorBuffer();
 

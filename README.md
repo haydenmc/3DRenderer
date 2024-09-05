@@ -149,3 +149,12 @@ Rotating the cube with simple rotation transformations.
 https://github.com/user-attachments/assets/d292fcb0-5ef9-456a-81c1-ded31994804e
 
 _[02.Simple-Vector-Rotation-Transformation.mp4](/videos/02.Simple-Vector-Rotation-Transformation.mp4)_
+
+## 03. Wireframe Cube
+
+The cube is now expressed as a collection of triangle faces and is rendered as
+a wireframe using a simple line rasterization algorithm.
+
+https://github.com/user-attachments/assets/2110c5b9-4b13-4d52-b9e0-2d0182134f01
+
+_[03.Wireframe-Cube.mp4](/videos/03.Wireframe-Cube.mp4)_

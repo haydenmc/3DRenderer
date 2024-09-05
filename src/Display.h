@@ -15,6 +15,8 @@ void DrawGrid(int gridSize, uint32_t gridColor);
 void DrawPixel(int x, int y, uint32_t color);
 void DrawFilledRect(int x, int y, int width, int height, uint32_t color);
 void DrawRect(int x, int y, int width, int height, uint32_t color);
+void DrawLine(int x0, int y0, int x1, int y1, uint32_t color);
+void DrawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
 void RenderColorBuffer(void);
 void ClearColorBuffer(uint32_t color);
 void DestroyWindow(void);
