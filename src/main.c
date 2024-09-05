@@ -7,6 +7,7 @@
 
 // Globals
 bool g_isRunning = false;
+uint32_t g_previousFrameTime = 0;
 vec3_t g_cubePoints[NUM_CUBE_POINTS]; // 9x9x9 cube
 vec2_t g_projectedPoints[NUM_CUBE_POINTS];
 float g_fovFactor = 640;
@@ -69,6 +70,14 @@ vec2_t Project(vec3_t point)
 
 void Update(void)
 {
+    float timeToWait = FRAME_TARGET_TIME - (SDL_GetTicks() - g_previousFrameTime);
+    if ((timeToWait > 0.0f) && (timeToWait <= FRAME_TARGET_TIME))
+    {
+        SDL_Delay((uint32_t)(timeToWait));
+    }
+
+    g_previousFrameTime = SDL_GetTicks();
+
     g_cubeRotation.x += 0.01f;
     g_cubeRotation.y += 0.01f;
     g_cubeRotation.z += 0.01f;

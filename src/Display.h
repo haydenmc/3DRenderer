@@ -1,5 +1,8 @@
 #pragma once
 
+#define FPS 60.0f
+#define FRAME_TARGET_TIME (1000 / FPS)
+
 extern int g_windowWidth;
 extern int g_windowHeight;
 extern SDL_Window* g_window;
