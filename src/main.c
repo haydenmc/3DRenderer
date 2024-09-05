@@ -1,18 +1,15 @@
 #include "pch.h"
 #include "Display.h"
+#include "Mesh.h"
 #include "Vector.h"
-
-// Defines
-#define NUM_CUBE_POINTS (9 * 9 * 9)
 
 // Globals
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
-vec3_t g_cubePoints[NUM_CUBE_POINTS]; // 9x9x9 cube
-vec2_t g_projectedPoints[NUM_CUBE_POINTS];
 float g_fovFactor = 640;
 vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = -5 };
 vec3_t g_cubeRotation = { .x = 0, .y = 0, .z = 0 };
+triangle_t g_trianglesToRender[N_MESH_FACES];
 
 void Setup(void)
 {
@@ -24,20 +21,6 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
-
-    int pointCount = 0;
-    for (float x = -1; x <= 1; x += 0.25)
-    {
-        for (float y = -1; y <= 1; y += 0.25)
-        {
-            for (float z = -1; z <= 1; z += 0.25)
-            {
-                vec3_t newPoint = { .x = x, .y = y, .z = z };
-                g_cubePoints[pointCount] = newPoint;
-                ++pointCount;
-            }
-        }
-    }
 }
 
 void ProcessInput(void)
@@ -82,19 +65,38 @@ void Update(void)
     g_cubeRotation.y += 0.01f;
     g_cubeRotation.z += 0.01f;
 
-    for (int i = 0; i < NUM_CUBE_POINTS; ++i)
+    for (int i = 0; i < N_MESH_FACES; ++i)
     {
-        vec3_t point = g_cubePoints[i];
+        face_t meshFace = g_meshFaces[i];
+        vec3_t faceVertices[3];
+        faceVertices[0] = g_meshVertices[meshFace.a - 1];
+        faceVertices[1] = g_meshVertices[meshFace.b - 1];
+        faceVertices[2] = g_meshVertices[meshFace.c - 1];
 
-        vec3_t transformedPoint = Vec3RotateX(point, g_cubeRotation.x);
-        transformedPoint = Vec3RotateY(transformedPoint, g_cubeRotation.y);
-        transformedPoint = Vec3RotateZ(transformedPoint, g_cubeRotation.z);
+        triangle_t projectedTriangle;
 
-        // HACK: Translate the points away from the camera
-        transformedPoint.z -= g_cameraPosition.z;
+        for (int j = 0; j < 3; ++j)
+        {
+            vec3_t transformedVertex = faceVertices[j];
 
-        vec2_t projectedPoint = Project(transformedPoint);
-        g_projectedPoints[i] = projectedPoint;
+            // Rotate
+            transformedVertex = Vec3RotateX(transformedVertex, g_cubeRotation.x);
+            transformedVertex = Vec3RotateY(transformedVertex, g_cubeRotation.y);
+            transformedVertex = Vec3RotateZ(transformedVertex, g_cubeRotation.z);
+
+            // Translate
+            transformedVertex.z -= g_cameraPosition.z;
+
+            // Project
+            vec2_t projectedPoint = Project(transformedVertex);
+
+            // Center
+            projectedPoint.x += (g_windowWidth / 2);
+            projectedPoint.y += (g_windowHeight / 2);
+
+            projectedTriangle.points[j] = projectedPoint;
+        }
+        g_trianglesToRender[i] = projectedTriangle;
     }
 }
 
@@ -102,16 +104,26 @@ void Render(void)
 {
     DrawGrid(10, 0xFF333333);
 
-    for (int i = 0; i < NUM_CUBE_POINTS; ++i)
+    for (int i = 0; i < N_MESH_FACES; ++i)
     {
-        vec2_t projectedPoint = g_projectedPoints[i];
+        triangle_t triangleToRender = g_trianglesToRender[i];
         DrawFilledRect(
-            (int)(projectedPoint.x + (g_windowWidth / 2)),
-            (int)(projectedPoint.y + (g_windowHeight / 2)),
-            4,
-            4,
-            0xFFFFFF00
-        );
+            (int)triangleToRender.points[0].x,
+            (int)triangleToRender.points[0].y,
+            3,
+            3,
+            0xFFFFFF00);
+        DrawFilledRect((int)triangleToRender.points[1].x,
+            (int)triangleToRender.points[1].y,
+            3,
+            3,
+            0xFFFFFF00);
+        DrawFilledRect(
+            (int)triangleToRender.points[2].x,
+            (int)triangleToRender.points[2].y,
+            3,
+            3,
+            0xFFFFFF00);
     }
     RenderColorBuffer();
 

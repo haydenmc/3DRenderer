@@ -60,7 +60,7 @@ void DrawGrid(int gridSize, uint32_t gridColor)
 
 void DrawPixel(int x, int y, uint32_t color)
 {
-    if ((x < g_windowWidth) && (y < g_windowHeight))
+    if ((x > 0) && (x < g_windowWidth) && (y > 0) && (y < g_windowHeight))
     {
         g_colorBuffer[(g_windowWidth * y) + x] = color;
     }

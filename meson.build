@@ -25,7 +25,9 @@ executable('renderer',
     ],
     c_pch: 'src/pch.h',
     sources: [
-        'src/Main.c',
         'src/Display.c',
+        'src/Main.c',
+        'src/Mesh.c',
+        'src/Triangle.c',
         'src/Vector.c',
     ])
