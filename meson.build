@@ -24,10 +24,12 @@ executable('renderer',
         dependency('sdl2'),
     ],
     c_pch: 'src/pch.h',
+    include_directories: include_directories('vendor'),
     sources: [
         'src/Display.c',
         'src/Main.c',
         'src/Mesh.c',
         'src/Triangle.c',
         'src/Vector.c',
+        'vendor/array/array.c',
     ])

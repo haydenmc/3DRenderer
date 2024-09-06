@@ -150,7 +150,6 @@ void ClearColorBuffer(uint32_t color)
 void DestroyWindow(void)
 {
     SDL_DestroyTexture(g_colorBufferTexture);
-    free(g_colorBuffer);
     SDL_DestroyRenderer(g_renderer);
     SDL_DestroyWindow(g_window);
     SDL_Quit();

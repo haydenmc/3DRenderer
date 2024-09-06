@@ -158,3 +158,12 @@ a wireframe using a simple line rasterization algorithm.
 https://github.com/user-attachments/assets/2110c5b9-4b13-4d52-b9e0-2d0182134f01
 
 _[03.Wireframe-Cube.mp4](/videos/03.Wireframe-Cube.mp4)_
+
+## 04. Rendering OBJ Files
+
+Instead of a static cube, the renderer can now read in arbitrary OBJ files to
+render.
+
+https://github.com/user-attachments/assets/89b2c095-3da6-4f46-abf7-81b7079f193d
+
+_[04.Render-OBJ-File.mp4](/videos/04.Render-OBJ-File.mp4)_

@@ -1,4 +1,5 @@
 #include "pch.h"
+#include <array/array.h>
 #include "Display.h"
 #include "Mesh.h"
 #include "Vector.h"
@@ -7,9 +8,8 @@
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
 float g_fovFactor = 640;
-vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = -5 };
-vec3_t g_cubeRotation = { .x = 0, .y = 0, .z = 0 };
-triangle_t g_trianglesToRender[N_MESH_FACES];
+vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = -4 };
+triangle_t* g_trianglesToRender = NULL;
 
 void Setup(void)
 {
@@ -21,6 +21,7 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
+    LoadObjFileData("./assets/f22.obj");
 }
 
 void ProcessInput(void)
@@ -61,17 +62,19 @@ void Update(void)
 
     g_previousFrameTime = SDL_GetTicks();
 
-    g_cubeRotation.x += 0.01f;
-    g_cubeRotation.y += 0.01f;
-    g_cubeRotation.z += 0.01f;
+    g_trianglesToRender = NULL;
 
-    for (int i = 0; i < N_MESH_FACES; ++i)
+    g_Mesh.rotation.x += 0.025f;
+    g_Mesh.rotation.y -= 0.005f;
+
+    int numFaces = array_length(g_Mesh.faces);
+    for (int i = 0; i < numFaces; ++i)
     {
-        face_t meshFace = g_meshFaces[i];
+        face_t meshFace = g_Mesh.faces[i];
         vec3_t faceVertices[3];
-        faceVertices[0] = g_meshVertices[meshFace.a - 1];
-        faceVertices[1] = g_meshVertices[meshFace.b - 1];
-        faceVertices[2] = g_meshVertices[meshFace.c - 1];
+        faceVertices[0] = g_Mesh.vertices[meshFace.a - 1];
+        faceVertices[1] = g_Mesh.vertices[meshFace.b - 1];
+        faceVertices[2] = g_Mesh.vertices[meshFace.c - 1];
 
         triangle_t projectedTriangle;
 
@@ -80,9 +83,9 @@ void Update(void)
             vec3_t transformedVertex = faceVertices[j];
 
             // Rotate
-            transformedVertex = Vec3RotateX(transformedVertex, g_cubeRotation.x);
-            transformedVertex = Vec3RotateY(transformedVertex, g_cubeRotation.y);
-            transformedVertex = Vec3RotateZ(transformedVertex, g_cubeRotation.z);
+            transformedVertex = Vec3RotateX(transformedVertex, g_Mesh.rotation.x);
+            transformedVertex = Vec3RotateY(transformedVertex, g_Mesh.rotation.y);
+            transformedVertex = Vec3RotateZ(transformedVertex, g_Mesh.rotation.z);
 
             // Translate
             transformedVertex.z -= g_cameraPosition.z;
@@ -96,15 +99,15 @@ void Update(void)
 
             projectedTriangle.points[j] = projectedPoint;
         }
-        g_trianglesToRender[i] = projectedTriangle;
+        array_push(g_trianglesToRender, projectedTriangle);
     }
 }
 
 void Render(void)
 {
     DrawGrid(10, 0xFF333333);
-
-    for (int i = 0; i < N_MESH_FACES; ++i)
+    int numTriangles = array_length(g_trianglesToRender);
+    for (int i = 0; i < numTriangles; ++i)
     {
         triangle_t triangleToRender = g_trianglesToRender[i];
         DrawTriangle(
@@ -116,11 +119,21 @@ void Render(void)
             (int)triangleToRender.points[2].y,
             0xFF00FF00);
     }
+
+    array_free(g_trianglesToRender);
+
     RenderColorBuffer();
 
     ClearColorBuffer(0xFF000000);
 
     SDL_RenderPresent(g_renderer);
+}
+
+void FreeResources(void)
+{
+    free(g_colorBuffer);
+    array_free(g_Mesh.faces);
+    array_free(g_Mesh.vertices);
 }
 
 int main(void)
@@ -135,6 +148,8 @@ int main(void)
         Update();
         Render();
     }
+
+    FreeResources();
 
     DestroyWindow();
 
