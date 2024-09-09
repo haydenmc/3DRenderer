@@ -42,7 +42,16 @@ https://github.com/user-attachments/assets/89b2c095-3da6-4f46-abf7-81b7079f193d
 
 _[04.Render-OBJ-File.mp4](/videos/04.Render-OBJ-File.mp4)_
 
-# Math Notes
+## 05. Back Face Culling
+
+Implemented a bunch of vector functions and used them to implement back-face
+culling; mesh faces that aren't visible by the camera are no longer rendered.
+
+https://github.com/user-attachments/assets/6244fd86-ecb3-4da7-bc90-2546d74a739c
+
+_[05.Back-Face-Culling.mp4](/videos/05.Back-Face-Culling.mp4)_
+
+# Notes
 
 ## Perspective Projection
 
@@ -188,3 +197,135 @@ vec3_t Vec3RotateZ(vec3_t v, float angle)
     return rotated_vector;
 }
 ```
+
+## Vector Math Review
+
+### Vector Magnitude
+
+**Magnitude** refers to the length of the vector:
+
+$$
+|\vec{v}|
+$$
+
+$$
+|\vec{v}| = \sqrt{{v_x}^2 + {v_y}^2}
+$$
+
+### Vector Addition
+
+Adding vectors is basically starting one vector from the end of the other:
+
+$$
+\vec{a} + \vec{b} = (a_x + b_x, a_y + b_y)
+$$
+
+![Illustration of two vectors being added](/images/vector-adding.png)
+
+### Vector Subtraction
+
+Subtraction is the same as addition, but invert/negate the second vector:
+
+$$
+\vec{a} - \vec{b} = (a_x - b_x, a_y - b_y)
+$$
+
+![First illustration of vector subtraction, showing original vectors](/images/vector-subtraction-01.png)
+
+![Second illustration of vector subtraction, showing second vector negated](/images/vector-subtraction-02.png)
+
+![Third illustration of vector subtraction, showing resulting vector](/images/vector-subtraction-03.png)
+
+### Cross Product
+
+The cross product helps to calculate the normal vector of a plane.
+
+The cross product of two vectors $\vec{x} \times \vec{y}$ yields a vector that is
+perpendicular to both of those vectors.
+
+![Illustration showing two vectors and their cross product](/images/vector-cross-product.png)
+
+To calculate the cross product:
+
+$$
+\vec{N} = \vec{a} \times \vec{b}
+$$
+
+$$
+N_x = a_y b_z - a_z b_y
+$$
+
+$$
+N_y = a_z b_x - a_x b_z
+$$
+
+$$
+N_z = a_x b_y - a_y b_x
+$$
+
+There are two possible perpendicular vectors for any given pair of vectors.
+The order of operands will determine which direction is calculated.
+
+![Illustration showing the different operand order of cross product](/images/vector-cross-product-order.png)
+
+The **magnitude** of the cross product is related to the angle between the two
+input vectors:
+
+$$
+|\vec{a} \times \vec{b}| = |a| |b| \sin{\theta}
+$$
+
+[Resource for additional information on how to derive the cross product](https://youtu.be/-1nle1mGZSQ)
+
+### Dot Product
+
+The dot product of two vectors produces a scalar value of the sum of the
+components of each given vector multiplied together.
+
+$$
+\vec{a} \cdot \vec{b} = {a_x}{b_x} + {a_y}{b_y}
+$$
+
+When used with unit vectors, the dot product can be used to produce a
+"projection" of one vector onto the other.
+
+![Illustration of dot product projection](/images/vector-dot-product-projection.png)
+
+The more "aligned" the vectors are, the larger the dot product is. If they are
+exactly the same, the dot product is $1$.
+
+At a 90 degree offset, the dot product is $0$.
+
+If the two vectors are complete opposites, the dot product is $-1$.
+
+### Normalizing Vectors
+
+A normalized vector is a vector with a magnitude of 1.
+
+$$
+\hat{a} = \frac{\vec{a}}{|\vec{a}|}
+$$
+
+If you don't care about the length of a vector, it's often better to express it
+as a normalized vector.
+
+## Back Face Culling
+
+If we'd like to avoid rendering faces that are facing away from the camera, we
+can simply compare their normal vector to the vector of the camera.
+
+![Illustration of the the camera's vector relative to cube face normals](/images/back-face-culling-diagram.png)
+
+Here's how we can get the normal vector of a triangle face:
+
+![Illustration of calculating normal vector given 3 vertices](/images/getting-normal-of-triangle-face.png)
+
+Note that we take our vertices in clockwise order, consistent with our chosen
+coordinate system.
+
+Once we have the normal vector, we can compare it to the camera ray vector using
+the dot product to determine if the face is facing toward the camera or away
+from it.
+
+To find the camera ray vector, we simply subtract the camera position from the
+point we are observing.

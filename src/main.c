@@ -8,7 +8,7 @@
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
 float g_fovFactor = 640;
-vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = -4 };
+vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = 0 };
 triangle_t* g_trianglesToRender = NULL;
 
 void Setup(void)
@@ -21,7 +21,8 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
-    LoadObjFileData("./assets/f22.obj");
+    //LoadObjFileData("./assets/f22.obj");
+    LoadObjFileData("assets/cube.obj");
 }
 
 void ProcessInput(void)
@@ -78,6 +79,8 @@ void Update(void)
 
         triangle_t projectedTriangle;
 
+        // Transform vertices
+        vec3_t transformedVertices[3];
         for (int j = 0; j < 3; ++j)
         {
             vec3_t transformedVertex = faceVertices[j];
@@ -87,13 +90,35 @@ void Update(void)
             transformedVertex = Vec3RotateY(transformedVertex, g_Mesh.rotation.y);
             transformedVertex = Vec3RotateZ(transformedVertex, g_Mesh.rotation.z);
 
-            // Translate
-            transformedVertex.z -= g_cameraPosition.z;
+            // Translate away from the camera
+            transformedVertex.z += 4;
 
-            // Project
-            vec2_t projectedPoint = Project(transformedVertex);
+            transformedVertices[j] = transformedVertex;
+        }
 
-            // Center
+        // Cull faces that are facing away from the camera
+        vec3_t vectorA = transformedVertices[0];
+        vec3_t vectorB = transformedVertices[1];
+        vec3_t vectorC = transformedVertices[2];
+        vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
+        vectorAB = Vec3Normalize(vectorAB);
+        vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
+        vectorAC = Vec3Normalize(vectorAC);
+        vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
+        faceNormal = Vec3Normalize(faceNormal);
+        vec3_t cameraRay = Vec3Subtract(g_cameraPosition, vectorA);
+        float cameraDotNormal = Vec3DotProduct(faceNormal, cameraRay);
+        if (cameraDotNormal <= 0)
+        {
+            continue;
+        }
+
+        // Project to screen space
+        for (int j = 0; j < 3; ++j)
+        {
+            vec2_t projectedPoint = Project(transformedVertices[j]);
+
+            // Center in viewport
             projectedPoint.x += (g_windowWidth / 2);
             projectedPoint.y += (g_windowHeight / 2);
 

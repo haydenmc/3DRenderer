@@ -74,6 +74,12 @@ void LoadObjFileData(char* filename)
                 array_push(g_Mesh.faces, face);
             }
         }
+        fclose(objFile);
     }
-    fclose(objFile);
+    else
+    {
+        int error = errno;
+        printf("error %d", error);
+        exit(1);
+    }
 }
