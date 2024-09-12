@@ -4,12 +4,22 @@
 #include "Mesh.h"
 #include "Vector.h"
 
+enum
+{
+    RENDER_VERTICES = 1 << 0,
+    RENDER_WIREFRAME = 1 << 1,
+    RENDER_RASTERIZE = 1 << 2,
+    RENDER_ENABLE_BACK_FACE_CULLING = 1 << 3,
+};
+
 // Globals
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
 float g_fovFactor = 640;
 vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = 0 };
 triangle_t* g_trianglesToRender = NULL;
+uint8_t g_renderMode = RENDER_WIREFRAME | RENDER_RASTERIZE | RENDER_ENABLE_BACK_FACE_CULLING;
+
 
 void Setup(void)
 {
@@ -36,9 +46,29 @@ void ProcessInput(void)
         g_isRunning = false;
         break;
     case SDL_KEYDOWN:
-        if (event.key.keysym.sym == SDLK_ESCAPE)
+        switch (event.key.keysym.sym)
         {
+        case SDLK_ESCAPE:
             g_isRunning = false;
+            break;
+        case SDLK_1:
+            g_renderMode = RENDER_VERTICES | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            break;
+        case SDLK_2:
+            g_renderMode = RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            break;
+        case SDLK_3:
+            g_renderMode = RENDER_RASTERIZE | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            break;
+        case SDLK_4:
+            g_renderMode = RENDER_RASTERIZE | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            break;
+        case SDLK_c:
+            g_renderMode = g_renderMode | RENDER_ENABLE_BACK_FACE_CULLING;
+            break;
+        case SDLK_d:
+            g_renderMode = g_renderMode & ~RENDER_ENABLE_BACK_FACE_CULLING;
+            break;
         }
         break;
     }
@@ -96,21 +126,23 @@ void Update(void)
             transformedVertices[j] = transformedVertex;
         }
 
-        // Cull faces that are facing away from the camera
-        vec3_t vectorA = transformedVertices[0];
-        vec3_t vectorB = transformedVertices[1];
-        vec3_t vectorC = transformedVertices[2];
-        vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
-        vectorAB = Vec3Normalize(vectorAB);
-        vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
-        vectorAC = Vec3Normalize(vectorAC);
-        vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
-        faceNormal = Vec3Normalize(faceNormal);
-        vec3_t cameraRay = Vec3Subtract(g_cameraPosition, vectorA);
-        float cameraDotNormal = Vec3DotProduct(faceNormal, cameraRay);
-        if (cameraDotNormal <= 0)
+        if (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING)
         {
-            continue;
+            vec3_t vectorA = transformedVertices[0];
+            vec3_t vectorB = transformedVertices[1];
+            vec3_t vectorC = transformedVertices[2];
+            vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
+            vectorAB = Vec3Normalize(vectorAB);
+            vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
+            vectorAC = Vec3Normalize(vectorAC);
+            vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
+            faceNormal = Vec3Normalize(faceNormal);
+            vec3_t cameraRay = Vec3Subtract(g_cameraPosition, vectorA);
+            float cameraDotNormal = Vec3DotProduct(faceNormal, cameraRay);
+            if (cameraDotNormal <= 0)
+            {
+                continue;
+            }
         }
 
         // Project to screen space
@@ -136,22 +168,27 @@ void Render(void)
     for (int i = 0; i < numTriangles; ++i)
     {
         triangle_t triangleToRender = g_trianglesToRender[i];
-        DrawFilledTriangle(
-            (int)triangleToRender.points[0].x,
-            (int)triangleToRender.points[0].y,
-            (int)triangleToRender.points[1].x,
-            (int)triangleToRender.points[1].y,
-            (int)triangleToRender.points[2].x,
-            (int)triangleToRender.points[2].y,
-            0xFFFFFFFF);
-        DrawTriangle(
-            (int)triangleToRender.points[0].x,
-            (int)triangleToRender.points[0].y,
-            (int)triangleToRender.points[1].x,
-            (int)triangleToRender.points[1].y,
-            (int)triangleToRender.points[2].x,
-            (int)triangleToRender.points[2].y,
-            0xFF000000);
+        int x0 = (int)triangleToRender.points[0].x;
+        int y0 = (int)triangleToRender.points[0].y;
+        int x1 = (int)triangleToRender.points[1].x;
+        int y1 = (int)triangleToRender.points[1].y;
+        int x2 = (int)triangleToRender.points[2].x;
+        int y2 = (int)triangleToRender.points[2].y; 
+
+        if (g_renderMode & RENDER_RASTERIZE)
+        {
+            DrawFilledTriangle(x0, y0, x1, y1, x2, y2, 0xFFFFFFFF);
+        }
+        if (g_renderMode & RENDER_WIREFRAME)
+        {
+            DrawTriangle(x0, y0, x1, y1, x2, y2, 0xFF00FF00);
+        }
+        if (g_renderMode & RENDER_VERTICES)
+        {
+            DrawFilledRect(x0 - 1, y0 - 1, 2, 2, 0xFFFF0000);
+            DrawFilledRect(x1 - 1, y1 - 1, 2, 2, 0xFFFF0000);
+            DrawFilledRect(x2 - 1, y2 - 1, 2, 2, 0xFFFF0000);
+        }
     }
 
     array_free(g_trianglesToRender);
