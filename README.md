@@ -51,6 +51,16 @@ https://github.com/user-attachments/assets/6244fd86-ecb3-4da7-bc90-2546d74a739c
 
 _[05.Back-Face-Culling.mp4](/videos/05.Back-Face-Culling.mp4)_
 
+## 06. Triangle Rasterization
+
+Triangles are now filled in with a set of static colors. Render modes can be
+changed at runtime between wireframe and rasterized, plus an option for
+showing dots on vertices and enabling/disabling back-face culling.
+
+https://github.com/user-attachments/assets/c22b3a23-cfb9-4d59-ba3d-ba4bcd3f1792
+
+_[06.Triangle-Rasterization.mp4](/videos/06.Triangle-Rasterization.mp4)_
+
 # Notes
 
 ## Perspective Projection

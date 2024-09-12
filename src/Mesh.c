@@ -2,6 +2,15 @@
 #include <array/array.h>
 #include "Mesh.h"
 
+uint32_t g_faceColors[] = {
+    0xFF0000FF,
+    0xFF00FF00,
+    0xFF00FFFF,
+    0xFFFF0000,
+    0xFFFF00FF,
+    0xFFFFFF00,
+};
+
 vec3_t g_cubeVertices[N_CUBE_VERTICES] = {
     { .x = -1, .y = -1, .z = -1 }, // 1
     { .x = -1, .y =  1, .z = -1 }, // 2
@@ -60,6 +69,7 @@ void LoadObjFileData(char* filename)
     char line[256];
     if (objFile != NULL)
     {
+        int colorIndex = 0;
         while (fgets(line, sizeof(line), objFile))
         {
             vec3_t vertex;
@@ -71,6 +81,15 @@ void LoadObjFileData(char* filename)
             else if (sscanf(line, "f %d/%*d/%*d %d/%*d/%*d %d/%*d/%*d",
                 &face.a, &face.b, &face.c) == 3)
             {
+                face.color = g_faceColors[colorIndex];
+                if (colorIndex == (sizeof(g_faceColors) / sizeof(g_faceColors[0])) - 1)
+                {
+                    colorIndex = 0;
+                }
+                else
+                {
+                    ++colorIndex;
+                }
                 array_push(g_Mesh.faces, face);
             }
         }

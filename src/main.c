@@ -108,6 +108,7 @@ void Update(void)
         faceVertices[2] = g_Mesh.vertices[meshFace.c - 1];
 
         triangle_t projectedTriangle;
+        projectedTriangle.color = meshFace.color;
 
         // Transform vertices
         vec3_t transformedVertices[3];
@@ -177,7 +178,7 @@ void Render(void)
 
         if (g_renderMode & RENDER_RASTERIZE)
         {
-            DrawFilledTriangle(x0, y0, x1, y1, x2, y2, 0xFFFFFFFF);
+            DrawFilledTriangle(x0, y0, x1, y1, x2, y2, triangleToRender.color);
         }
         if (g_renderMode & RENDER_WIREFRAME)
         {
