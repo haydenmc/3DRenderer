@@ -21,8 +21,8 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
-    //LoadObjFileData("./assets/f22.obj");
-    LoadObjFileData("assets/cube.obj");
+    LoadObjFileData("./assets/f22.obj");
+    //LoadObjFileData("assets/cube.obj");
 }
 
 void ProcessInput(void)
@@ -131,10 +131,19 @@ void Update(void)
 void Render(void)
 {
     DrawGrid(10, 0xFF333333);
+
     int numTriangles = array_length(g_trianglesToRender);
     for (int i = 0; i < numTriangles; ++i)
     {
         triangle_t triangleToRender = g_trianglesToRender[i];
+        DrawFilledTriangle(
+            (int)triangleToRender.points[0].x,
+            (int)triangleToRender.points[0].y,
+            (int)triangleToRender.points[1].x,
+            (int)triangleToRender.points[1].y,
+            (int)triangleToRender.points[2].x,
+            (int)triangleToRender.points[2].y,
+            0xFFFFFFFF);
         DrawTriangle(
             (int)triangleToRender.points[0].x,
             (int)triangleToRender.points[0].y,
@@ -142,7 +151,7 @@ void Render(void)
             (int)triangleToRender.points[1].y,
             (int)triangleToRender.points[2].x,
             (int)triangleToRender.points[2].y,
-            0xFF00FF00);
+            0xFF000000);
     }
 
     array_free(g_trianglesToRender);
