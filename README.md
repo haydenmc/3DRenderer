@@ -61,6 +61,15 @@ https://github.com/user-attachments/assets/c22b3a23-cfb9-4d59-ba3d-ba4bcd3f1792
 
 _[06.Triangle-Rasterization.mp4](/videos/06.Triangle-Rasterization.mp4)_
 
+## 07. Face Depth Sorting
+
+With a naive sorting algorithm, faces are rasterized in the correct depth order,
+preventing back faces from "bleeding through."
+
+https://github.com/user-attachments/assets/aabe4a79-ba2c-4486-93bc-711db1823edf
+
+_[07.Face-Depth-Sorting.mp4](/videos/07.Face-Depth-Sorting.mp4)_
+
 # Notes
 
 ## Perspective Projection

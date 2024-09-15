@@ -146,6 +146,11 @@ void Update(void)
             }
         }
 
+        // Calculate average depth
+        float averageDepth = (transformedVertices[0].z + transformedVertices[1].z +
+            transformedVertices[2].z) / 3.0f;
+        projectedTriangle.averageDepth = averageDepth;
+
         // Project to screen space
         for (int j = 0; j < 3; ++j)
         {
@@ -158,6 +163,28 @@ void Update(void)
             projectedTriangle.points[j] = projectedPoint;
         }
         array_push(g_trianglesToRender, projectedTriangle);
+    }
+
+    // Sort the triangles to render by average depth, descending.
+    for (int i = 0; i < max(array_length(g_trianglesToRender) - 1, 0); ++i)
+    {
+        // Find the highest depth triangle
+        triangle_t currentTriangle = g_trianglesToRender[i];
+        int highestDepthTriangleIndex = i;
+        for (int j = i + 1; j < array_length(g_trianglesToRender); ++j)
+        {
+            if (g_trianglesToRender[j].averageDepth >
+                g_trianglesToRender[highestDepthTriangleIndex].averageDepth)
+            {
+                highestDepthTriangleIndex = j;
+            }
+        }
+        // Swap it
+        if (i != highestDepthTriangleIndex)
+        {
+            g_trianglesToRender[i] = g_trianglesToRender[highestDepthTriangleIndex];
+            g_trianglesToRender[highestDepthTriangleIndex] = currentTriangle;
+        }
     }
 }
 
