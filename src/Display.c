@@ -10,7 +10,7 @@ SDL_Texture* g_colorBufferTexture = NULL;
 
 bool InitializeWindow(void)
 {
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
     {
         fprintf(stderr, "Error initializing SDL\n");
         return false;
