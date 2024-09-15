@@ -348,3 +348,195 @@ from it.
 
 To find the camera ray vector, we simply subtract the camera position from the
 point we are observing.
+
+## Matrices
+
+Just a way of expressing and manipulating a set of values in rows and columns.
+
+$$
+M = 
+\begin{bmatrix}
+-2 & 5 & 6 \\
+ 5 & 2 & 7
+\end{bmatrix}
+$$
+
+Matrix $M$ has 2 rows and 3 columns; the *dimensions* are $2 \times 3$.
+
+A matrix has a set of elements that can be referenced as followed:
+
+$$
+M_{3 \times 2} =
+\begin{bmatrix}
+m_{11} & m_{12} \\
+m_{21} & m_{22} \\
+m_{31} & m_{32}
+\end{bmatrix}
+$$
+
+Matrices are useful for solving systems of equations:
+
+$$
+\left \lbrace
+\begin{alignedat}{3}
+    x + 2y -4z = 5 \\
+    2x + y - 6z = 8 \\
+    4x - y - 12z = 13
+\end{alignedat}
+\right.
+$$
+
+$$
+\begin{bmatrix}
+1 &  2 &  -4 & 5 \\
+2 &  1 &  -6 & 8 \\
+4 & -1 & -12 & 13
+\end{bmatrix}
+$$
+
+In computer graphics, matrices are useful in converting sets of geometric data
+into different coordinate systems. They can be used to apply translation,
+rotation, projection, and many other transformations.
+
+### Matrix Operations
+
+#### Matrix Addition
+
+Simply add each element together.
+
+$$
+\begin{bmatrix}
+2 &  3 \\
+1 & -5
+\end{bmatrix} +
+\begin{bmatrix}
+3 & 1 \\
+1 & 2
+\end{bmatrix} =
+\begin{bmatrix}
+5 &  4 \\
+2 & -3
+\end{bmatrix}
+$$
+
+#### Matrix Subtraction
+
+Simply subtract each element from each other.
+
+$$
+\begin{bmatrix}
+2 &  3 \\
+1 & -5
+\end{bmatrix} -
+\begin{bmatrix}
+3 & 1 \\
+1 & 2
+\end{bmatrix} =
+\begin{bmatrix}
+-1 &  2 \\
+ 0 & -7
+\end{bmatrix}
+$$
+
+#### Matrix Multiplication
+
+Matrix multiplication is more complex. For each combination of row and column
+you must multiply the row elements with the column elements and sum the results:
+
+$$
+\begin{bmatrix}
+1 & 2 \\
+3 & 4
+\end{bmatrix} *
+\begin{bmatrix}
+5 & 6 \\
+7 & 8
+\end{bmatrix} =
+\begin{bmatrix}
+(1 \ast 5) + (2 \ast 7) & (1 \ast 6) + (2 \ast 8) \\
+(3 \ast 5) + (4 \ast 7) & (3 \ast 6) + (4 \ast 8)
+\end{bmatrix} =
+\begin{bmatrix}
+19 & 22 \\
+43 & 50
+\end{bmatrix}
+$$
+
+Multiplication is only possible when the number of columns on the left matrix
+is equal to the number of rows on the right matrix.
+
+The dimension of the resulting matrix will have the number of rows of the left
+matrix and the number of columns of the right matrix.
+
+$$
+M_{N \times M} * M_{M \times P} = M_{N \times P}
+$$
+
+Matrix multiplication is not commutative:
+
+$$
+A * B \neq B * A
+$$
+
+### Identity Matrix
+
+A square matrix with 1's in the diagonal and 0's everywhere else.
+
+Any matrix multiplied by the identity matrix will return an unchanged result.
+
+$$
+\begin{bmatrix}
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+$$
+
+### Rotation Matrix
+
+Earlier, we determined that you can calculate the new $x$ and $y$ positions for
+a given rotation $\alpha$ using simple trigonometry functions:
+
+$$
+x' = x \cos{\alpha} - y \sin{\alpha}
+$$
+
+$$
+y' = y \cos{\alpha} + x \sin{\alpha}
+$$
+
+This can be represented in matrix form:
+
+$$
+\begin{bmatrix}
+x' \\
+y'
+\end{bmatrix} =
+\begin{bmatrix}
+\cos{\alpha} & -\sin{\alpha} \\
+\sin{\alpha} & \cos{\alpha}
+\end{bmatrix} *
+\begin{bmatrix}
+x \\
+y
+\end{bmatrix} =
+\begin{bmatrix}
+x\cos{\alpha} - y\sin{\alpha} \\
+x\sin{\alpha} + y\cos{\alpha}
+\end{bmatrix}
+$$
+
+This matrix is called a 2D
+[rotation matrix](https://en.wikipedia.org/wiki/Rotation_matrix):
+
+$$
+R =
+\begin{bmatrix}
+\cos{\theta} & -\sin{\theta} \\
+\sin{\theta} & \cos{\theta}
+\end{bmatrix}
+$$
+
+When it is multiplied against a set of coordinates, it produces a set of
+transformed coordinates rotated by $\theta$.
