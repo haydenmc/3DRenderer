@@ -73,6 +73,17 @@ mat4_t Matrix4MakeRotationZ(float angle)
     return result;
 }
 
+mat4_t Matrix4MakePerspective(float fov, float aspect, float zNear, float zFar)
+{
+    mat4_t m = {{{ 0.0f }}};
+    m.m[0][0] = aspect * (1 / tanf(fov / 2.0f));
+    m.m[1][1] = 1 / tanf(fov / 2.0f);
+    m.m[2][2] = zFar / (zFar - zNear);
+    m.m[2][3] = (-zFar * zNear) / (zFar - zNear);
+    m.m[3][2] = 1.0f;
+    return m;
+}
+
 mat4_t Matrix4MultiplyM(mat4_t lhs, mat4_t rhs)
 {
     mat4_t result;
@@ -97,5 +108,20 @@ vec4_t Matrix4MultiplyV(mat4_t m, vec4_t v)
         .z = (m.m[2][0] * v.x) + (m.m[2][1] * v.y) + (m.m[2][2] * v.z) + (m.m[2][3] * v.w),
         .w = (m.m[3][0] * v.x) + (m.m[3][1] * v.y) + (m.m[3][2] * v.z) + (m.m[3][3] * v.w)
     };
+    return result;
+}
+
+vec4_t Matrix4MultiplyVProject(mat4_t projectionMatrix, vec4_t v)
+{
+    vec4_t result = Matrix4MultiplyV(projectionMatrix, v);
+
+    // Perform perspective divide with original z value that is now stored in w
+    if (result.w != 0)
+    {
+        result.x /= result.w;
+        result.y /= result.w;
+        result.z /= result.w;
+    }
+
     return result;
 }

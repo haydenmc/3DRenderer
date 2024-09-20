@@ -13,14 +13,18 @@ enum
     RENDER_ENABLE_BACK_FACE_CULLING = 1 << 3,
 };
 
+// Constants
+#define PROJECTION_FOV ((float)M_PI / 3.0f)
+#define PROJECTION_Z_NEAR 0.1f
+#define PROJECTION_Z_FAR 100.0f
+
 // Globals
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
-float g_fovFactor = 640;
 vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = 0 };
+mat4_t g_projectionMatrix;
 triangle_t* g_trianglesToRender = NULL;
 uint8_t g_renderMode = RENDER_WIREFRAME | RENDER_RASTERIZE | RENDER_ENABLE_BACK_FACE_CULLING;
-
 
 void Setup(void)
 {
@@ -32,6 +36,8 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
+    g_projectionMatrix = Matrix4MakePerspective(PROJECTION_FOV,
+        (g_windowHeight / (float)g_windowWidth), PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
     //LoadObjFileData("./assets/f22.obj");
     LoadObjFileData("assets/cube.obj");
 }
@@ -73,15 +79,6 @@ void ProcessInput(void)
         }
         break;
     }
-}
-
-vec2_t Project(vec3_t point)
-{
-    vec2_t projectedPoint = {
-        .x = (g_fovFactor * point.x) / point.z,
-        .y = (g_fovFactor * point.y) / point.z
-    };
-    return projectedPoint;
 }
 
 void Update(void)
@@ -165,13 +162,18 @@ void Update(void)
         // Project to screen space
         for (int j = 0; j < 3; ++j)
         {
-            vec2_t projectedPoint = Project(Vec3FromVec4(transformedVertices[j]));
+            vec4_t projectedPoint = Matrix4MultiplyVProject(g_projectionMatrix,
+                transformedVertices[j]);
 
-            // Center in viewport
-            projectedPoint.x += (g_windowWidth / 2);
-            projectedPoint.y += (g_windowHeight / 2);
+            // Scale from screen space to actual screen size
+            projectedPoint.x *= (g_windowWidth / 2.0f);
+            projectedPoint.y *= (g_windowHeight / 2.0f);
 
-            projectedTriangle.points[j] = projectedPoint;
+            // Translate points to the middle of the screen
+            projectedPoint.x += (g_windowWidth / 2.0f);
+            projectedPoint.y += (g_windowHeight / 2.0f);
+
+            projectedTriangle.points[j] = (vec2_t){ .x = projectedPoint.x, .y = projectedPoint.y };
         }
         array_push(g_trianglesToRender, projectedTriangle);
     }

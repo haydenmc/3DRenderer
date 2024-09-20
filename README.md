@@ -713,7 +713,7 @@ $$
 M_{world} = M_{translation} * M_{rotation} * M_{scale}
 $$
 
-$$
+```math
 \vec{v}_{vertex} = 
 M_{world} *
 \begin{bmatrix}
@@ -722,7 +722,7 @@ y \\
 z \\
 1
 \end{bmatrix}
-$$
+```
 
 #### Order of Transformations
 
@@ -737,3 +737,122 @@ example, if translation is applied before rotation such that the object has
 moved away from the origin (0, 0), then rotation will be still be applied around
 the origin of (0, 0), exaggerating the result of the rotation transformation.
 
+### Perspective Projection Matrix
+
+You can also use matrices to achieve projection of points onto a plane.
+
+Projection Matrices handle:
+
+ - **Aspect ratio**: adjust x and y values based on screen width and height
+ - **Field of view**: adjust x and y values based on FOV angle
+ - **Normalization**: adjust x, y, and z values to sit between -1 and 1
+
+![Illustration of how vertices in 3D space can be translated to NDC values](/images/projection-matrix-to-image-space-ndc.png)
+
+The aspect ratio of the height vs width of the screen.
+
+$$
+a = \frac{h}{w}
+$$
+
+The field of view is defined as the 'scale factor' for how points should be
+adjusted to fit within the given FOV angle.
+
+![Illustration of field-of-view calculation](/images/field-of-view-trig.png)
+
+$$
+f = \frac{1}{\tan(\theta / 2)}
+$$
+
+#### Normalizing Z
+
+We must also normalize z to a 'normalized device coordinate' between 0 and 1.
+
+We do this by defining two planes; $zfar$ and $znear$. We can then define a
+scaling factor to adjust values with respect to these two planes.
+
+$$
+\lambda = \frac{zfar}{zfar - znear} - \frac{zfar * znear}{zfar - znear}
+$$
+
+We can use values $a$, $f$, $\lambda$ from above to convert world points
+$`\begin{bmatrix}x \\ y \\ z \end{bmatrix}`$ to screen space
+$`\begin{bmatrix} a f x \\ f y \\ \lambda z - \lambda znear \end{bmatrix}`$.
+
+#### Deriving the Projection Matrix
+
+We can substitute in the values we defined above:
+
+$$
+\begin{bmatrix}
+a f x \\
+f y \\
+\lambda z - \lambda znear
+\end{bmatrix} =
+\begin{bmatrix}
+(\frac{h}{w})(\frac{1}{\tan(\theta/2)}) * x \\
+(\frac{1}{\tan(\theta/2)}) * y \\
+(\frac{zfar}{zfar - znear}) * z - (\frac{zfar}{zfar - znear}) * znear
+\end{bmatrix}
+$$
+
+To apply this using matrix multiplication, we can use a matrix like the
+following:
+
+$$
+\begin{bmatrix}
+(\frac{h}{w})(\frac{1}{\tan(\theta/2)}) & 0 & 0 & 0 \\
+0 & (\frac{1}{\tan(\theta/2)}) & 0 & 0 \\
+0 & 0 & (\frac{zfar}{zfar - znear}) & -(\frac{zfar}{zfar - znear}) * znear \\
+0 & 0 & 1 & 0
+\end{bmatrix}
+$$
+
+Note the $1$ in position $M_{4, 3}$. This is used to maintain the original
+un-normalized $z$ value in the 4th dimension $w$ in order to later perform
+operations such as perspective divide.
+
+[This note](https://courses.pikuma.com/courses/take/learn-computer-graphics-programming/texts/55621841-really-grokking-the-projection-matrix)
+has additional explanation for the values contained within the projection
+matrix.
+
+### Column-Major vs Row-Major
+
+In the examples above, vertices are represented in "column-major" order:
+
+$$
+\begin{bmatrix}
+x \\
+y \\
+z \\
+w
+\end{bmatrix}
+$$
+
+An alternative representation is "row-major":
+
+$$
+\begin{bmatrix}
+x & y & z & w
+\end{bmatrix}
+$$
+
+Different graphics APIs may choose to use different representations for a
+variety of reasons.
+
+One implication to row-major vs column-major is the order of operands for matrix
+multiplication. Vertices defined in row-major format are "post-multiplied"
+against a projection matrix:
+
+```math
+\vec{p}_{projected} = \vec{p} * M_{scale} * M_{rotate} * M_{translate}
+```
+
+Where as column-major vertices are "pre-multiplied":
+
+```math
+\vec{p}_{projected} = M_{translate} * M_{rotate} * M_{scale} * \vec{p}
+```
+
+[This note](https://courses.pikuma.com/courses/take/learn-computer-graphics-programming/texts/14521611-order-of-transformations-for-row-major-and-column-major)
+has more details.
