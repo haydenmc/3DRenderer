@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <array/array.h>
 #include "Display.h"
+#include "Matrix.h"
 #include "Mesh.h"
 #include "Vector.h"
 
@@ -31,8 +32,8 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
-    LoadObjFileData("./assets/f22.obj");
-    //LoadObjFileData("assets/cube.obj");
+    //LoadObjFileData("./assets/f22.obj");
+    LoadObjFileData("assets/cube.obj");
 }
 
 void ProcessInput(void)
@@ -95,8 +96,26 @@ void Update(void)
 
     g_trianglesToRender = NULL;
 
-    g_Mesh.rotation.x += 0.025f;
-    g_Mesh.rotation.y -= 0.005f;
+    g_Mesh.scale.x -= 0.001f;
+    g_Mesh.scale.y -= 0.001f;
+    g_Mesh.rotation.x += 0.01f;
+    g_Mesh.rotation.y += 0.01f;
+    g_Mesh.rotation.z += 0.01f;
+    g_Mesh.translation.x += 0.01f;
+    g_Mesh.translation.z = 5.0f;
+
+    mat4_t scaleMatrix = Matrix4MakeScale(g_Mesh.scale.x, g_Mesh.scale.y, g_Mesh.scale.z);
+    mat4_t rotationMatrixX = Matrix4MakeRotationX(g_Mesh.rotation.x);
+    mat4_t rotationMatrixY = Matrix4MakeRotationY(g_Mesh.rotation.y);
+    mat4_t rotationMatrixZ = Matrix4MakeRotationZ(g_Mesh.rotation.z);
+    mat4_t translationMatrix = Matrix4MakeTranslation(g_Mesh.translation.x, g_Mesh.translation.y,
+        g_Mesh.translation.z);
+    mat4_t worldMatrix = Matrix4Identity();
+    worldMatrix = Matrix4MultiplyM(scaleMatrix, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(rotationMatrixX, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(rotationMatrixY, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(rotationMatrixZ, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(translationMatrix, worldMatrix);
 
     int numFaces = array_length(g_Mesh.faces);
     for (int i = 0; i < numFaces; ++i)
@@ -111,27 +130,19 @@ void Update(void)
         projectedTriangle.color = meshFace.color;
 
         // Transform vertices
-        vec3_t transformedVertices[3];
+        vec4_t transformedVertices[3];
         for (int j = 0; j < 3; ++j)
         {
-            vec3_t transformedVertex = faceVertices[j];
-
-            // Rotate
-            transformedVertex = Vec3RotateX(transformedVertex, g_Mesh.rotation.x);
-            transformedVertex = Vec3RotateY(transformedVertex, g_Mesh.rotation.y);
-            transformedVertex = Vec3RotateZ(transformedVertex, g_Mesh.rotation.z);
-
-            // Translate away from the camera
-            transformedVertex.z += 4;
-
+            vec4_t transformedVertex = Vec4FromVec3(faceVertices[j]);
+            transformedVertex = Matrix4MultiplyV(worldMatrix, transformedVertex);
             transformedVertices[j] = transformedVertex;
         }
 
         if (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING)
         {
-            vec3_t vectorA = transformedVertices[0];
-            vec3_t vectorB = transformedVertices[1];
-            vec3_t vectorC = transformedVertices[2];
+            vec3_t vectorA = Vec3FromVec4(transformedVertices[0]);
+            vec3_t vectorB = Vec3FromVec4(transformedVertices[1]);
+            vec3_t vectorC = Vec3FromVec4(transformedVertices[2]);
             vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
             vectorAB = Vec3Normalize(vectorAB);
             vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
@@ -154,7 +165,7 @@ void Update(void)
         // Project to screen space
         for (int j = 0; j < 3; ++j)
         {
-            vec2_t projectedPoint = Project(transformedVertices[j]);
+            vec2_t projectedPoint = Project(Vec3FromVec4(transformedVertices[j]));
 
             // Center in viewport
             projectedPoint.x += (g_windowWidth / 2);

@@ -28,6 +28,7 @@ executable('renderer',
     sources: [
         'src/Display.c',
         'src/Main.c',
+        'src/Matrix.c',
         'src/Mesh.c',
         'src/Triangle.c',
         'src/Vector.c',

@@ -70,6 +70,15 @@ https://github.com/user-attachments/assets/aabe4a79-ba2c-4486-93bc-711db1823edf
 
 _[07.Face-Depth-Sorting.mp4](/videos/07.Face-Depth-Sorting.mp4)_
 
+## 08. Transformation Matrices
+
+Use rotation, scaling, and translation matrices to apply transformations to mesh
+vertices.
+
+https://github.com/user-attachments/assets/1e44e171-277d-4cdf-bf4a-76d6296baa15
+
+_[08.Transformation-Matrices.mp4](/videos/08.Transformation-Matrices.mp4)_
+
 # Notes
 
 ## Perspective Projection
@@ -493,7 +502,7 @@ $$
 \end{bmatrix}
 $$
 
-### Rotation Matrix
+### Simple Rotation Matrix
 
 Earlier, we determined that you can calculate the new $x$ and $y$ positions for
 a given rotation $\alpha$ using simple trigonometry functions:
@@ -540,3 +549,191 @@ $$
 
 When it is multiplied against a set of coordinates, it produces a set of
 transformed coordinates rotated by $\theta$.
+
+### Transformation Matrices
+
+In linear algebra, linear transformations can be represented by matrices.
+
+$$
+\begin{bmatrix}
+m & m & m & m \\
+m & m & m & m \\
+m & m & m & m \\
+m & m & m & m
+\end{bmatrix} *
+\begin{bmatrix}
+x \\
+y \\
+z \\
+w
+\end{bmatrix}
+$$
+
+4x4 matrices are usually used to represent 3D transformations (scale,
+translation, rotation, etc.)
+
+We use 4x4 instead of 3x3 because some transformations (ex. translation) require
+an extra row/column.
+
+To enable multiplication, an extra component $w$ is added to our original
+vector.
+
+#### Scale Matrix
+
+$$
+\begin{bmatrix}
+sx & 0  & 0  & 0 \\
+0  & sy & 0  & 0 \\
+0  & 0  & sz & 0 \\
+0  & 0  & 0  & 1 \\
+\end{bmatrix} *
+\begin{bmatrix}
+x \\
+y \\
+z \\
+1
+\end{bmatrix}
+$$
+
+Performing this multiplication yields the following:
+
+$$
+\begin{bmatrix}
+(sx * x) + 0        + 0        + 0 \\
+0        + (sy * y) + 0        + 0 \\
+0        + 0        + (sz * z) + 0 \\
+0        + 0        + 0        + (1 * 1) \\
+\end{bmatrix} = 
+\begin{bmatrix}
+sx * x \\
+sy * y \\
+sz * z \\
+1
+\end{bmatrix}
+$$
+
+#### Translation Matrix
+
+$$
+\begin{bmatrix}
+1 & 0 & 0 & tx \\
+0 & 1 & 0 & ty \\
+0 & 0 & 1 & tz \\
+0 & 0 & 0 & 1
+\end{bmatrix} *
+\begin{bmatrix}
+x \\
+y \\
+z \\
+1
+\end{bmatrix}
+$$
+
+Performing the multiplication yields the following:
+
+$$
+\begin{bmatrix}
+x + 0 + 0 + tx \\
+0 + y + 0 + ty \\
+0 + 0 + z + tz \\
+0 + 0 + 0 + 1
+\end{bmatrix} =
+\begin{bmatrix}
+x + tx \\
+y + ty \\
+z + tz \\
+1
+\end{bmatrix}
+$$
+
+#### Rotation Matrix
+
+*These are defined in a left-handed coordinate system, such that each axis is
+rotated counter-clockwise around its axis. See
+[direction](https://en.wikipedia.org/wiki/Rotation_matrix#Direction).*
+
+The rotation matrix for the **X axis** looks like this:
+
+$$
+\begin{bmatrix}
+1 & 0 & 0 & 0 \\
+0 &  \cos{\alpha} & \sin{\alpha} & 0 \\
+0 & -\sin{\alpha} & \cos{\alpha} & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix} *
+\begin{bmatrix}
+x \\
+y \\
+z \\
+1
+\end{bmatrix}
+$$
+
+The rotation matrix for the **Y axis** looks like this:
+
+$$
+\begin{bmatrix}
+\cos{\alpha} & 0 & -\sin{\alpha} & 0 \\
+0 & 1 & 0 & 0 \\
+\sin{\alpha} & 0 &  \cos{\alpha} & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix} *
+\begin{bmatrix}
+x \\
+y \\
+z \\
+1
+\end{bmatrix}
+$$
+
+The rotation matrix for the **Z axis** looks like this:
+
+$$
+\begin{bmatrix}
+ \cos{\alpha} & \sin{\alpha} & 0 & 0 \\
+-\sin{\alpha} & \cos{\alpha} & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix} *
+\begin{bmatrix}
+x \\
+y \\
+z \\
+1
+\end{bmatrix}
+$$
+
+### World Matrix
+
+By combining translation, rotation, and scaling matrices via matrix
+multiplication, we can express the location of an object in the world with a
+single matrix.
+
+$$
+M_{world} = M_{translation} * M_{rotation} * M_{scale}
+$$
+
+$$
+\vec{v}_{vertex} = 
+M_{world} *
+\begin{bmatrix}
+x \\
+y \\
+z \\
+1
+\end{bmatrix}
+$$
+
+#### Order of Transformations
+
+The order of transformations matters. The usual order is:
+
+ 1. Scale
+ 2. Rotate
+ 3. Translate
+
+If these are performed out-of-order, it may result in unexpected values. For
+example, if translation is applied before rotation such that the object has
+moved away from the origin (0, 0), then rotation will be still be applied around
+the origin of (0, 0), exaggerating the result of the rotation transformation.
+
