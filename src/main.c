@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <array/array.h>
 #include "Display.h"
+#include "Lighting.h"
 #include "Matrix.h"
 #include "Mesh.h"
 #include "Vector.h"
@@ -22,6 +23,7 @@ enum
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
 vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = 0 };
+light_t g_light;
 mat4_t g_projectionMatrix;
 triangle_t* g_trianglesToRender = NULL;
 uint8_t g_renderMode = RENDER_WIREFRAME | RENDER_RASTERIZE | RENDER_ENABLE_BACK_FACE_CULLING;
@@ -38,8 +40,14 @@ void Setup(void)
     );
     g_projectionMatrix = Matrix4MakePerspective(PROJECTION_FOV,
         (g_windowHeight / (float)g_windowWidth), PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
-    //LoadObjFileData("./assets/f22.obj");
-    LoadObjFileData("assets/cube.obj");
+    g_light = (light_t){
+        .direction = Vec3Normalize((vec3_t){
+             .x = 0,
+             .y = 0,
+             .z = 1 })
+        };
+    LoadObjFileData("./assets/f22.obj");
+    //LoadObjFileData("assets/cube.obj");
 }
 
 void ProcessInput(void)
@@ -93,12 +101,11 @@ void Update(void)
 
     g_trianglesToRender = NULL;
 
-    g_Mesh.scale.x -= 0.001f;
-    g_Mesh.scale.y -= 0.001f;
+    // g_Mesh.scale.x -= 0.001f;
+    // g_Mesh.scale.y -= 0.001f;
     g_Mesh.rotation.x += 0.01f;
     g_Mesh.rotation.y += 0.01f;
     g_Mesh.rotation.z += 0.01f;
-    g_Mesh.translation.x += 0.01f;
     g_Mesh.translation.z = 5.0f;
 
     mat4_t scaleMatrix = Matrix4MakeScale(g_Mesh.scale.x, g_Mesh.scale.y, g_Mesh.scale.z);
@@ -124,7 +131,6 @@ void Update(void)
         faceVertices[2] = g_Mesh.vertices[meshFace.c - 1];
 
         triangle_t projectedTriangle;
-        projectedTriangle.color = meshFace.color;
 
         // Transform vertices
         vec4_t transformedVertices[3];
@@ -135,17 +141,23 @@ void Update(void)
             transformedVertices[j] = transformedVertex;
         }
 
+        // Calculate face normal
+        vec3_t vectorA = Vec3FromVec4(transformedVertices[0]);
+        vec3_t vectorB = Vec3FromVec4(transformedVertices[1]);
+        vec3_t vectorC = Vec3FromVec4(transformedVertices[2]);
+        vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
+        vectorAB = Vec3Normalize(vectorAB);
+        vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
+        vectorAC = Vec3Normalize(vectorAC);
+        vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
+        faceNormal = Vec3Normalize(faceNormal);
+
+        // Calculate lighting
+        projectedTriangle.color = LightCalculateColorForFace(faceNormal, g_light, meshFace.color);
+
+        // Cull back-faces if enabled
         if (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING)
         {
-            vec3_t vectorA = Vec3FromVec4(transformedVertices[0]);
-            vec3_t vectorB = Vec3FromVec4(transformedVertices[1]);
-            vec3_t vectorC = Vec3FromVec4(transformedVertices[2]);
-            vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
-            vectorAB = Vec3Normalize(vectorAB);
-            vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
-            vectorAC = Vec3Normalize(vectorAC);
-            vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
-            faceNormal = Vec3Normalize(faceNormal);
             vec3_t cameraRay = Vec3Subtract(g_cameraPosition, vectorA);
             float cameraDotNormal = Vec3DotProduct(faceNormal, cameraRay);
             if (cameraDotNormal <= 0)
@@ -154,7 +166,7 @@ void Update(void)
             }
         }
 
-        // Calculate average depth
+        // Calculate average depth for sorting
         float averageDepth = (transformedVertices[0].z + transformedVertices[1].z +
             transformedVertices[2].z) / 3.0f;
         projectedTriangle.averageDepth = averageDepth;
@@ -168,6 +180,9 @@ void Update(void)
             // Scale from screen space to actual screen size
             projectedPoint.x *= (g_windowWidth / 2.0f);
             projectedPoint.y *= (g_windowHeight / 2.0f);
+
+            // Invert the y values to account for flipped screen y coordinates
+            projectedPoint.y *= -1;
 
             // Translate points to the middle of the screen
             projectedPoint.x += (g_windowWidth / 2.0f);

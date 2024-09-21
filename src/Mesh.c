@@ -2,13 +2,17 @@
 #include <array/array.h>
 #include "Mesh.h"
 
+// uint32_t g_faceColors[] = {
+//     0xFF0000FF,
+//     0xFF00FF00,
+//     0xFF00FFFF,
+//     0xFFFF0000,
+//     0xFFFF00FF,
+//     0xFFFFFF00,
+// };
+
 uint32_t g_faceColors[] = {
-    0xFF0000FF,
-    0xFF00FF00,
-    0xFF00FFFF,
-    0xFFFF0000,
-    0xFFFF00FF,
-    0xFFFFFF00,
+    0xFF999999,
 };
 
 vec3_t g_cubeVertices[N_CUBE_VERTICES] = {

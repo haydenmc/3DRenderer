@@ -79,6 +79,15 @@ https://github.com/user-attachments/assets/1e44e171-277d-4cdf-bf4a-76d6296baa15
 
 _[08.Transformation-Matrices.mp4](/videos/08.Transformation-Matrices.mp4)_
 
+## 09. Flat Shading with Global Lighting
+
+Simple lighting appearance by shading each face in relation to a global light
+source.
+
+https://github.com/user-attachments/assets/3d43d586-b1a7-4112-bf47-abdd36143518
+
+_[09.Flat-Shading-Global-Lighting.mp4](/videos/09.Flat-Shading-Global-Lighting.mp4)_
+
 # Notes
 
 ## Perspective Projection
@@ -856,3 +865,11 @@ Where as column-major vertices are "pre-multiplied":
 
 [This note](https://courses.pikuma.com/courses/take/learn-computer-graphics-programming/texts/14521611-order-of-transformations-for-row-major-and-column-major)
 has more details.
+
+## Flat Shading with Global Illumination
+
+Simple lighting can be achieved by implementing one global light with a
+direction vector. The direction vector can be compared against each face normal
+via dot product to determine a lighting intensity.
+
+![Illustration of the global light relative to the face normal vector](/images/simple-lighting-dot-product.png)

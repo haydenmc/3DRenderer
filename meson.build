@@ -27,6 +27,7 @@ executable('renderer',
     include_directories: include_directories('vendor'),
     sources: [
         'src/Display.c',
+        'src/Lighting.c',
         'src/Main.c',
         'src/Matrix.c',
         'src/Mesh.c',
