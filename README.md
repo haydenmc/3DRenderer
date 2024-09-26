@@ -88,6 +88,14 @@ https://github.com/user-attachments/assets/3d43d586-b1a7-4112-bf47-abdd36143518
 
 _[09.Flat-Shading-Global-Lighting.mp4](/videos/09.Flat-Shading-Global-Lighting.mp4)_
 
+## 10. Texture UV Mapping
+
+Textures are mapped onto triangle faces using barycentric weighting.
+
+https://github.com/user-attachments/assets/98f31b94-215a-462b-98cc-2ae2e9221c1b
+
+_[10.Texture-UV-Mapping.mp4](/videos/10.Texture-UV-Mapping.mp4)_
+
 # Notes
 
 ## Perspective Projection
@@ -873,3 +881,74 @@ direction vector. The direction vector can be compared against each face normal
 via dot product to determine a lighting intensity.
 
 ![Illustration of the global light relative to the face normal vector](/images/simple-lighting-dot-product.png)
+
+## Texture Mapping
+
+Texture coordinates are represented as $`(u, v)`$ simply to differentiate from
+the normal $`x, y`$ values.
+
+UV mapping is the process of mapping the vertices of a face to positions on a
+texture.
+
+![Illustration of UV coordinates mapping to a face of a cube](/images/uv-coordinates.png)
+
+![Illustration of UV coordinates mapping a texture to the face of a triangle](/images/uv-coordinates-mapped.png)
+
+### Interpolating with Barycentric Coordinates
+
+Barycentric coordinates are like applying a set of weight values on vertices
+to decide where a point is located in the middle of a triangle face.
+
+```math
+P = (\alpha, \beta, \gamma)
+```
+
+These 'weight values' also represent the areas of the three sub-triangles made
+by the point $`P`$
+
+![Illustration of the relationship between Barycentric weights and sub-triangle areas](/images/barycentric-weights-with-area.png)
+
+The sum of the barycentric weights is always $`1`$.
+
+```math
+\alpha + \beta + \gamma = 1
+```
+
+The weights 'pull' the vertices to result in coordinate $`P`$.
+
+```math
+\vec{P} = \alpha \vec{A} + \beta \vec{B} + \gamma \vec{C}
+```
+
+#### Finding Barycentric Coordinates of a Point
+
+Given the triangle and point $`P`$ defined in the illustration above...
+
+```math
+\alpha = \frac{area\_triangle(PBC)}{area\_triangle(ABC)}
+```
+
+To calculate the area of the triangle $`PBC`$, treat it like a parallelogram.
+This allows us to easily calculate the area using the cross product.
+Use the same approach to determine the area of $`ABC`$.
+
+![Illustration of expanding triangles to parallelograms](/images/barycentric-parallelograms.png)
+
+```math
+\alpha = \frac{area\_parallelogram(PBEC)}{area\_parallelogram(ABDC)}
+```
+
+```math
+\alpha = \frac{PC \times PB}{AC \times AB}
+```
+
+```math
+\beta = \frac{AC \times AP}{AC \times AB}
+```
+
+```math
+\gamma = 1.0 - \alpha - \beta
+```
+
+_Ensure that the order of the cross product matches the coordinate system in
+use, left-handed (clockwise) in this case._

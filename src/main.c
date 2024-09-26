@@ -4,15 +4,18 @@
 #include "Lighting.h"
 #include "Matrix.h"
 #include "Mesh.h"
+#include "Texture.h"
+#include "Triangle.h"
 #include "Vector.h"
 
-enum
+enum RenderMode
 {
-    RENDER_VERTICES = 1 << 0,
-    RENDER_WIREFRAME = 1 << 1,
-    RENDER_RASTERIZE = 1 << 2,
-    RENDER_ENABLE_BACK_FACE_CULLING = 1 << 3,
-};
+    RENDER_VERTICES                 = 1 << 0,
+    RENDER_WIREFRAME                = 1 << 1,
+    RENDER_FLAT_SHADING             = 1 << 2,
+    RENDER_TEXTURED                 = 1 << 3,
+    RENDER_ENABLE_BACK_FACE_CULLING = 1 << 4,
+} RenderMode;
 
 // Constants
 #define PROJECTION_FOV ((float)M_PI / 3.0f)
@@ -26,7 +29,7 @@ vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = 0 };
 light_t g_light;
 mat4_t g_projectionMatrix;
 triangle_t* g_trianglesToRender = NULL;
-uint8_t g_renderMode = RENDER_WIREFRAME | RENDER_RASTERIZE | RENDER_ENABLE_BACK_FACE_CULLING;
+enum RenderMode g_renderMode = RENDER_TEXTURED | RENDER_ENABLE_BACK_FACE_CULLING;
 
 void Setup(void)
 {
@@ -46,8 +49,15 @@ void Setup(void)
              .y = 0,
              .z = 1 })
         };
-    LoadObjFileData("./assets/f22.obj");
-    //LoadObjFileData("assets/cube.obj");
+    
+    // Manually load hard-coded texture data from static array
+    g_meshTexture = (uint32_t*)REDBRICK_TEXTURE;
+    g_textureWidth = 64;
+    g_textureHeight = 64;
+
+    // LoadObjFileData("./assets/f22.obj");
+    // LoadObjFileData("assets/cube.obj");
+    LoadCubeMeshData();
 }
 
 void ProcessInput(void)
@@ -73,10 +83,13 @@ void ProcessInput(void)
             g_renderMode = RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
             break;
         case SDLK_3:
-            g_renderMode = RENDER_RASTERIZE | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            g_renderMode = RENDER_FLAT_SHADING | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
             break;
         case SDLK_4:
-            g_renderMode = RENDER_RASTERIZE | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            g_renderMode = RENDER_FLAT_SHADING | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            break;
+        case SDLK_5:
+            g_renderMode = RENDER_TEXTURED | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
             break;
         case SDLK_c:
             g_renderMode = g_renderMode | RENDER_ENABLE_BACK_FACE_CULLING;
@@ -105,7 +118,7 @@ void Update(void)
     // g_Mesh.scale.y -= 0.001f;
     g_Mesh.rotation.x += 0.01f;
     g_Mesh.rotation.y += 0.01f;
-    g_Mesh.rotation.z += 0.01f;
+    //g_Mesh.rotation.z += 0.01f;
     g_Mesh.translation.z = 5.0f;
 
     mat4_t scaleMatrix = Matrix4MakeScale(g_Mesh.scale.x, g_Mesh.scale.y, g_Mesh.scale.z);
@@ -190,6 +203,12 @@ void Update(void)
 
             projectedTriangle.points[j] = (vec2_t){ .x = projectedPoint.x, .y = projectedPoint.y };
         }
+
+        // Populate texture coordinates
+        projectedTriangle.texCoords[0] = (tex2_t){ meshFace.a_uv.u, meshFace.a_uv.v };
+        projectedTriangle.texCoords[1] = (tex2_t){ meshFace.b_uv.u, meshFace.b_uv.v };
+        projectedTriangle.texCoords[2] = (tex2_t){ meshFace.c_uv.u, meshFace.c_uv.v };
+
         array_push(g_trianglesToRender, projectedTriangle);
     }
 
@@ -226,12 +245,24 @@ void Render(void)
         triangle_t triangleToRender = g_trianglesToRender[i];
         int x0 = (int)triangleToRender.points[0].x;
         int y0 = (int)triangleToRender.points[0].y;
+        float u0 = triangleToRender.texCoords[0].u;
+        float v0 = triangleToRender.texCoords[0].v;
         int x1 = (int)triangleToRender.points[1].x;
         int y1 = (int)triangleToRender.points[1].y;
+        float u1 = triangleToRender.texCoords[1].u;
+        float v1 = triangleToRender.texCoords[1].v;
         int x2 = (int)triangleToRender.points[2].x;
-        int y2 = (int)triangleToRender.points[2].y; 
+        int y2 = (int)triangleToRender.points[2].y;
+        float u2 = triangleToRender.texCoords[2].u;
+        float v2 = triangleToRender.texCoords[2].v;
 
-        if (g_renderMode & RENDER_RASTERIZE)
+        if (g_renderMode & RENDER_TEXTURED)
+        {
+            DrawTexturedTriangle(x0, y0, u0, v0,
+                x1, y1, u1, v1,
+                x2, y2, u2, v2, g_meshTexture);
+        }
+        if (g_renderMode & RENDER_FLAT_SHADING)
         {
             DrawFilledTriangle(x0, y0, x1, y1, x2, y2, triangleToRender.color);
         }
