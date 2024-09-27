@@ -177,3 +177,12 @@ vec3_t Vec3FromVec4(vec4_t v)
     };
     return result;
 }
+
+vec2_t Vec2FromVec4(vec4_t v)
+{
+    vec2_t result = {
+        .x = v.x,
+        .y = v.y,
+    };
+    return result;
+}

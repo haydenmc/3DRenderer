@@ -91,6 +91,9 @@ void ProcessInput(void)
         case SDLK_5:
             g_renderMode = RENDER_TEXTURED | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
             break;
+        case SDLK_6:
+            g_renderMode = RENDER_TEXTURED | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
+            break;
         case SDLK_c:
             g_renderMode = g_renderMode | RENDER_ENABLE_BACK_FACE_CULLING;
             break;
@@ -201,7 +204,8 @@ void Update(void)
             projectedPoint.x += (g_windowWidth / 2.0f);
             projectedPoint.y += (g_windowHeight / 2.0f);
 
-            projectedTriangle.points[j] = (vec2_t){ .x = projectedPoint.x, .y = projectedPoint.y };
+            projectedTriangle.points[j] = (vec4_t){ .x = projectedPoint.x, .y = projectedPoint.y,
+                .z = projectedPoint.z, .w = projectedPoint.w };
         }
 
         // Populate texture coordinates
@@ -245,22 +249,28 @@ void Render(void)
         triangle_t triangleToRender = g_trianglesToRender[i];
         int x0 = (int)triangleToRender.points[0].x;
         int y0 = (int)triangleToRender.points[0].y;
+        float z0 = triangleToRender.points[0].z;
+        float w0 = triangleToRender.points[0].w;
         float u0 = triangleToRender.texCoords[0].u;
         float v0 = triangleToRender.texCoords[0].v;
         int x1 = (int)triangleToRender.points[1].x;
         int y1 = (int)triangleToRender.points[1].y;
+        float z1 = triangleToRender.points[1].z;
+        float w1 = triangleToRender.points[1].w;
         float u1 = triangleToRender.texCoords[1].u;
         float v1 = triangleToRender.texCoords[1].v;
         int x2 = (int)triangleToRender.points[2].x;
         int y2 = (int)triangleToRender.points[2].y;
+        float z2 = triangleToRender.points[2].z;
+        float w2 = triangleToRender.points[2].w;
         float u2 = triangleToRender.texCoords[2].u;
         float v2 = triangleToRender.texCoords[2].v;
 
         if (g_renderMode & RENDER_TEXTURED)
         {
-            DrawTexturedTriangle(x0, y0, u0, v0,
-                x1, y1, u1, v1,
-                x2, y2, u2, v2, g_meshTexture);
+            DrawTexturedTriangle(x0, y0, z0, w0, u0, v0,
+                x1, y1, z1, w1, u1, v1,
+                x2, y2, z2, w2, u2, v2, g_meshTexture);
         }
         if (g_renderMode & RENDER_FLAT_SHADING)
         {

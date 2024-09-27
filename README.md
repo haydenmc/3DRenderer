@@ -96,6 +96,22 @@ https://github.com/user-attachments/assets/98f31b94-215a-462b-98cc-2ae2e9221c1b
 
 _[10.Texture-UV-Mapping.mp4](/videos/10.Texture-UV-Mapping.mp4)_
 
+## 11. Perspective Correct UV Interpolation
+
+Textures are mapped with perspective-corrected barycentric weighting.
+
+https://github.com/user-attachments/assets/330f3451-4141-4392-9ede-6d3cfea813d9
+
+_[11.Perspective-Correct-Interpolation.mp4](/videos/11.Perspective-Correct-Interpolation.mp4)_
+
+# Topics To Review
+
+Concepts that I still lack some total understanding of:
+
+ - Coordinate system handedness and how it affects operations such as cross
+   product
+ - Perspective correct interpolation
+
 # Notes
 
 ## Perspective Projection
@@ -952,3 +968,35 @@ Use the same approach to determine the area of $`ABC`$.
 
 _Ensure that the order of the cross product matches the coordinate system in
 use, left-handed (clockwise) in this case._
+
+### Perspective Correct Texture Mapping
+
+The straight mapping we achieved so far is called "affine mapping." It does not
+take into account perspective.
+
+To find depth values, you cannot simply interpolate $`z`$ values using barycentric
+weighting because the depth value is not linear across the triangle.
+
+However, the reciprocal of the Z components _is linear_. So we can use
+$`\frac{1}{z}`$ to find nthe interpolated $z$ at point $P$.
+
+![Image showing reciprocal Z values across triangle to find P value.](/images/reciprocal-triangle-z-values.png)
+
+The original $`z`$ value of each vertex is stored in the $`w`$ value of the
+vector, so that should be used in place of $`z`$.
+
+To achieve perspective correct mapping, we:
+
+ 1. Use the reciprocal of all attributes ($`\frac{1}{w}`$) (now linear in
+    screen space)
+ 2. Inerpolate over the triangle face (using barycentric weights,
+    $`\frac{1}{w}`$ factor)
+ 3. Divide all attributes by $`\frac{1}{w}`$ (undoes the perspective transform).
+
+There is a good academic paper describing the derivation of perspective correct
+interpolation [here](https://s3.amazonaws.com/thinkific/file_uploads/167815/attachments/c06/b72/f58/KokLimLow-PerspectiveCorrectInterpolation.pdf).
+
+Additional resources:
+
+ - https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/perspective-correct-interpolation-vertex-attributes.html
+ - https://www.youtube.com/watch?v=zPLfyj-Szow&t=2218s

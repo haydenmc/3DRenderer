@@ -43,3 +43,4 @@ vec3_t Vec3RotateZ(vec3_t v, float angle);
 // Vector Conversion Functions
 vec4_t Vec4FromVec3(vec3_t v);
 vec3_t Vec3FromVec4(vec4_t v);
+vec2_t Vec2FromVec4(vec4_t v);
