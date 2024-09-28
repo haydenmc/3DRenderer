@@ -73,20 +73,36 @@ void LoadObjFileData(char* filename)
 {
     FILE* objFile = fopen(filename, "r");
     char line[256];
+
     if (objFile != NULL)
     {
         int colorIndex = 0;
+        tex2_t* textureCoordinates = NULL;
         while (fgets(line, sizeof(line), objFile))
         {
             vec3_t vertex;
             face_t face;
+            int textureCoordinateIndices[3];
+            tex2_t textureCoordinate;
             if (sscanf(line, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z) == 3)
             {
                 array_push(g_Mesh.vertices, vertex);
             }
-            else if (sscanf(line, "f %d/%*d/%*d %d/%*d/%*d %d/%*d/%*d",
-                &face.a, &face.b, &face.c) == 3)
+            else if (sscanf(line, "vt %f %f", &textureCoordinate.u, &textureCoordinate.v) == 2)
             {
+                array_push(textureCoordinates, textureCoordinate);
+            }
+            else if (sscanf(line, "f %d/%d/%*d %d/%d/%*d %d/%d/%*d",
+                &face.a, &textureCoordinateIndices[0],
+                &face.b, &textureCoordinateIndices[1],
+                &face.c,&textureCoordinateIndices[2]) == 6)
+            {
+                face.a -= 1; // Convert to 0-indexed
+                face.b -= 1;
+                face.c -= 1;
+                face.a_uv = textureCoordinates[textureCoordinateIndices[0] - 1];
+                face.b_uv = textureCoordinates[textureCoordinateIndices[1] - 1];
+                face.c_uv = textureCoordinates[textureCoordinateIndices[2] - 1];
                 face.color = g_faceColors[colorIndex];
                 if (colorIndex == (sizeof(g_faceColors) / sizeof(g_faceColors[0])) - 1)
                 {
@@ -99,6 +115,7 @@ void LoadObjFileData(char* filename)
                 array_push(g_Mesh.faces, face);
             }
         }
+        array_free(textureCoordinates);
         fclose(objFile);
     }
     else

@@ -11,3 +11,5 @@
 #define SDL_MAIN_HANDLED 1
 #include <SDL.h>
 #pragma warning(pop)
+
+#include <upng/upng.h>

@@ -123,6 +123,13 @@ void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, ve
     interpolatedU /= interpolatedReciprocalW;
     interpolatedV /= interpolatedReciprocalW;
 
+    // Intelligently clamp with wraparound to [0, 1]
+    // (apparently some OBJ files use UV values > 1 to 'wrap around')
+    interpolatedU = interpolatedU < 0.0f ? 0.0f :
+        (interpolatedU > 1.0f ? (interpolatedU - floorf(interpolatedU)) : interpolatedU);
+    interpolatedV = interpolatedV < 0.0f ? 0.0f :
+        (interpolatedV > 1.0f ? (interpolatedV - floorf(interpolatedV)) : interpolatedV);
+
     int textureX = (int)(interpolatedU * g_textureWidth);
     int textureY = (int)(interpolatedV * g_textureHeight);
     int textureIndex = (g_textureWidth * textureY) + textureX;
@@ -165,6 +172,11 @@ void DrawTexturedTriangle(int x0, int y0, float z0, float w0, float u0, float v0
         SwapFloat(&u0, &u1);
         SwapFloat(&v0, &v1);
     }
+
+    // Flip the V component to account for inverted UV coordinate space
+    v0 = 1 - v0;
+    v1 = 1 - v1;
+    v2 = 1 - v2;
 
     // Create vector points
     vec4_t pointA = { (float)x0, (float)y0, z0, w0 };

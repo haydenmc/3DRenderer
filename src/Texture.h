@@ -9,5 +9,7 @@ typedef struct {
 extern int g_textureWidth;
 extern int g_textureHeight;
 
+extern upng_t* g_pngTexture;
 extern uint32_t* g_meshTexture;
-extern const uint8_t REDBRICK_TEXTURE[];
+
+void LoadPngTextureData(char* pngFilePath);

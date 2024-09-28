@@ -49,15 +49,28 @@ void Setup(void)
              .y = 0,
              .z = 1 })
         };
-    
-    // Manually load hard-coded texture data from static array
-    g_meshTexture = (uint32_t*)REDBRICK_TEXTURE;
-    g_textureWidth = 64;
-    g_textureHeight = 64;
 
+    // F22
     // LoadObjFileData("./assets/f22.obj");
-    // LoadObjFileData("assets/cube.obj");
-    LoadCubeMeshData();
+    // LoadPngTextureData("./assets/f22.png");
+    // F117
+    // LoadObjFileData("./assets/f117.obj");
+    // LoadPngTextureData("./assets/f117.png");
+    // EFA
+    // LoadObjFileData("./assets/efa.obj");
+    // LoadPngTextureData("./assets/efa.png");
+    // Drone
+    LoadObjFileData("./assets/drone.obj");
+    LoadPngTextureData("./assets/drone.png");
+    // Crab
+    // LoadObjFileData("./assets/crab.obj");
+    // LoadPngTextureData("./assets/crab.png");
+    // Cube
+    // LoadObjFileData("./assets/cube.obj");
+    // LoadPngTextureData("./assets/cube.png");
+
+    // Test Mesh Data
+    // LoadCubeMeshData();
 }
 
 void ProcessInput(void)
@@ -142,9 +155,9 @@ void Update(void)
     {
         face_t meshFace = g_Mesh.faces[i];
         vec3_t faceVertices[3];
-        faceVertices[0] = g_Mesh.vertices[meshFace.a - 1];
-        faceVertices[1] = g_Mesh.vertices[meshFace.b - 1];
-        faceVertices[2] = g_Mesh.vertices[meshFace.c - 1];
+        faceVertices[0] = g_Mesh.vertices[meshFace.a];
+        faceVertices[1] = g_Mesh.vertices[meshFace.b];
+        faceVertices[2] = g_Mesh.vertices[meshFace.c];
 
         triangle_t projectedTriangle;
 
@@ -300,6 +313,7 @@ void Render(void)
 void FreeResources(void)
 {
     free(g_colorBuffer);
+    upng_free(g_pngTexture);
     array_free(g_Mesh.faces);
     array_free(g_Mesh.vertices);
 }

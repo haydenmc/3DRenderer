@@ -104,6 +104,15 @@ https://github.com/user-attachments/assets/330f3451-4141-4392-9ede-6d3cfea813d9
 
 _[11.Perspective-Correct-Interpolation.mp4](/videos/11.Perspective-Correct-Interpolation.mp4)_
 
+## 12. Loading Arbitrary Textures and Texture Maps
+
+Textures can be loaded from PNG files and mapped using UV coordinates from
+associated OBJ files.
+
+https://github.com/user-attachments/assets/8b6d70b1-314f-4eea-ab7a-1fccdf11fb02
+
+_[12.Obj-Texture-Loading.mp4](/videos/12.Obj-Texture-Loading.mp4)_
+
 # Topics To Review
 
 Concepts that I still lack some total understanding of:
@@ -111,6 +120,10 @@ Concepts that I still lack some total understanding of:
  - Coordinate system handedness and how it affects operations such as cross
    product
  - Perspective correct interpolation
+
+# Additional Learning Resources
+
+ - [Subpixel Rendering](https://marioslab.io/posts/jitterbugs/)
 
 # Notes
 

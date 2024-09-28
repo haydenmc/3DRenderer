@@ -36,4 +36,5 @@ executable('renderer',
         'src/Triangle.c',
         'src/Vector.c',
         'vendor/array/array.c',
+        'vendor/upng/upng.c',
     ])
