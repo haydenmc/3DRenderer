@@ -113,6 +113,15 @@ https://github.com/user-attachments/assets/8b6d70b1-314f-4eea-ab7a-1fccdf11fb02
 
 _[12.Obj-Texture-Loading.mp4](/videos/12.Obj-Texture-Loading.mp4)_
 
+## 13. Z-Buffer
+
+Z-Buffer is used to determine which pixels are rendered on top, reducing
+glitching of triangles popping on top of others.
+
+https://github.com/user-attachments/assets/3e5d3ae1-63ca-42a9-8c04-3d71025cc91e
+
+_[13.Z-Buffer.mp4](/videos/13.Z-Buffer.mp4)_
+
 # Topics To Review
 
 Concepts that I still lack some total understanding of:
@@ -1013,3 +1022,17 @@ Additional resources:
 
  - https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/perspective-correct-interpolation-vertex-attributes.html
  - https://www.youtube.com/watch?v=zPLfyj-Szow&t=2218s
+
+## Z-Buffer
+
+Can also be called the depth buffer.
+
+This stores the depth of each screen pixel in an array, and helps determine
+which pixel is "in front."
+
+Alternative to painter's algorithm.
+
+As explained in perspective-correct texture interpolation, the Z depth is not
+linear in screen space across the surface of the triangle. Instead, like
+texture mapping, the reciprocal $`\frac{1}{w}`$ is used instead.
+

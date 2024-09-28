@@ -18,6 +18,7 @@ enum RenderMode
 } RenderMode;
 
 // Constants
+#define MAX_TRIANGLES 10000
 #define PROJECTION_FOV ((float)M_PI / 3.0f)
 #define PROJECTION_Z_NEAR 0.1f
 #define PROJECTION_Z_FAR 100.0f
@@ -28,12 +29,14 @@ uint32_t g_previousFrameTime = 0;
 vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = 0 };
 light_t g_light;
 mat4_t g_projectionMatrix;
-triangle_t* g_trianglesToRender = NULL;
+triangle_t g_trianglesToRender[MAX_TRIANGLES];
+int g_numTrianglesToRender = 0;
 enum RenderMode g_renderMode = RENDER_TEXTURED | RENDER_ENABLE_BACK_FACE_CULLING;
 
 void Setup(void)
 {
     g_colorBuffer = malloc(sizeof(uint32_t) * g_windowWidth * g_windowHeight);
+    g_zBuffer = malloc(sizeof(float) * g_windowWidth * g_windowHeight);
     g_colorBufferTexture = SDL_CreateTexture(
         g_renderer,
         SDL_PIXELFORMAT_ARGB8888,
@@ -51,8 +54,8 @@ void Setup(void)
         };
 
     // F22
-    // LoadObjFileData("./assets/f22.obj");
-    // LoadPngTextureData("./assets/f22.png");
+    LoadObjFileData("./assets/f22.obj");
+    LoadPngTextureData("./assets/f22.png");
     // F117
     // LoadObjFileData("./assets/f117.obj");
     // LoadPngTextureData("./assets/f117.png");
@@ -60,8 +63,8 @@ void Setup(void)
     // LoadObjFileData("./assets/efa.obj");
     // LoadPngTextureData("./assets/efa.png");
     // Drone
-    LoadObjFileData("./assets/drone.obj");
-    LoadPngTextureData("./assets/drone.png");
+    // LoadObjFileData("./assets/drone.obj");
+    // LoadPngTextureData("./assets/drone.png");
     // Crab
     // LoadObjFileData("./assets/crab.obj");
     // LoadPngTextureData("./assets/crab.png");
@@ -127,13 +130,13 @@ void Update(void)
     }
 
     g_previousFrameTime = SDL_GetTicks();
-
-    g_trianglesToRender = NULL;
+    g_numTrianglesToRender = 0;
 
     // g_Mesh.scale.x -= 0.001f;
     // g_Mesh.scale.y -= 0.001f;
     g_Mesh.rotation.x += 0.01f;
-    g_Mesh.rotation.y += 0.01f;
+    g_Mesh.rotation.y += 0.005f;
+    // g_Mesh.rotation.y += 0.01f;
     //g_Mesh.rotation.z += 0.01f;
     g_Mesh.translation.z = 5.0f;
 
@@ -195,11 +198,6 @@ void Update(void)
             }
         }
 
-        // Calculate average depth for sorting
-        float averageDepth = (transformedVertices[0].z + transformedVertices[1].z +
-            transformedVertices[2].z) / 3.0f;
-        projectedTriangle.averageDepth = averageDepth;
-
         // Project to screen space
         for (int j = 0; j < 3; ++j)
         {
@@ -226,29 +224,8 @@ void Update(void)
         projectedTriangle.texCoords[1] = (tex2_t){ meshFace.b_uv.u, meshFace.b_uv.v };
         projectedTriangle.texCoords[2] = (tex2_t){ meshFace.c_uv.u, meshFace.c_uv.v };
 
-        array_push(g_trianglesToRender, projectedTriangle);
-    }
-
-    // Sort the triangles to render by average depth, descending.
-    for (int i = 0; i < max(array_length(g_trianglesToRender) - 1, 0); ++i)
-    {
-        // Find the highest depth triangle
-        triangle_t currentTriangle = g_trianglesToRender[i];
-        int highestDepthTriangleIndex = i;
-        for (int j = i + 1; j < array_length(g_trianglesToRender); ++j)
-        {
-            if (g_trianglesToRender[j].averageDepth >
-                g_trianglesToRender[highestDepthTriangleIndex].averageDepth)
-            {
-                highestDepthTriangleIndex = j;
-            }
-        }
-        // Swap it
-        if (i != highestDepthTriangleIndex)
-        {
-            g_trianglesToRender[i] = g_trianglesToRender[highestDepthTriangleIndex];
-            g_trianglesToRender[highestDepthTriangleIndex] = currentTriangle;
-        }
+        g_trianglesToRender[g_numTrianglesToRender] = projectedTriangle;
+        g_numTrianglesToRender++;
     }
 }
 
@@ -256,8 +233,7 @@ void Render(void)
 {
     DrawGrid(10, 0xFF333333);
 
-    int numTriangles = array_length(g_trianglesToRender);
-    for (int i = 0; i < numTriangles; ++i)
+    for (int i = 0; i < g_numTrianglesToRender; ++i)
     {
         triangle_t triangleToRender = g_trianglesToRender[i];
         int x0 = (int)triangleToRender.points[0].x;
@@ -287,7 +263,8 @@ void Render(void)
         }
         if (g_renderMode & RENDER_FLAT_SHADING)
         {
-            DrawFilledTriangle(x0, y0, x1, y1, x2, y2, triangleToRender.color);
+            DrawFilledTriangle(triangleToRender.points[0], triangleToRender.points[1],
+                triangleToRender.points[2], triangleToRender.color);
         }
         if (g_renderMode & RENDER_WIREFRAME)
         {
@@ -301,11 +278,10 @@ void Render(void)
         }
     }
 
-    array_free(g_trianglesToRender);
-
     RenderColorBuffer();
 
     ClearColorBuffer(0xFF000000);
+    ClearZBuffer();
 
     SDL_RenderPresent(g_renderer);
 }
@@ -313,6 +289,7 @@ void Render(void)
 void FreeResources(void)
 {
     free(g_colorBuffer);
+    free(g_zBuffer);
     upng_free(g_pngTexture);
     array_free(g_Mesh.faces);
     array_free(g_Mesh.vertices);

@@ -6,6 +6,7 @@ int g_windowHeight = 600;
 SDL_Window* g_window = NULL;
 SDL_Renderer* g_renderer = NULL;
 uint32_t* g_colorBuffer = NULL;
+float* g_zBuffer = NULL;
 SDL_Texture* g_colorBufferTexture = NULL;
 
 bool InitializeWindow(void)
@@ -134,6 +135,17 @@ void RenderColorBuffer(void)
         NULL,
         NULL
     );
+}
+
+void ClearZBuffer(void)
+{
+    for (int y = 0; y < g_windowHeight; ++y)
+    {
+        for (int x = 0; x < g_windowWidth; ++x)
+        {
+            g_zBuffer[(g_windowWidth * y) + x] = 1.0f;
+        }
+    }
 }
 
 void ClearColorBuffer(uint32_t color)

@@ -3,79 +3,6 @@
 #include "Swap.h"
 #include "Triangle.h"
 
-void FillFlatBottomTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color)
-{
-    float firstSlope = (x1 - x0)/(float)(y1 - y0);
-    float secondSlope = (x2 - x0)/(float)(y2 - y0);
-
-    float startX = (float)x0;
-    float endX = (float)x0;
-
-    for (int y = y0; y <= y2; ++y)
-    {
-        DrawLine((int)startX, y, (int)endX, y, color);
-        startX += firstSlope;
-        endX += secondSlope;
-    }
-}
-
-void FillFlatTopTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color)
-{
-    float firstSlope = (x0 - x2)/(float)(y2 - y0);
-    float secondSlope = (x1 - x2)/(float)(y2 - y1);
-
-    float startX = (float)x2;
-    float endX = (float)x2;
-
-    for (int y = y2; y >= y0; --y)
-    {
-        DrawLine((int)startX, y, (int)endX, y, color);
-        startX += firstSlope;
-        endX += secondSlope;
-    }
-}
-
-void DrawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color)
-{
-    // First, sort vertices by ascending y coordinate
-    if (y0 > y1)
-    {
-        SwapInt(&y0, &y1);
-        SwapInt(&x0, &x1);
-    }
-    if (y1 > y2)
-    {
-        SwapInt(&x1, &x2);
-        SwapInt(&y1, &y2);
-    }
-    if (y0 > y1)
-    {
-        SwapInt(&y0, &y1);
-        SwapInt(&x0, &x1);
-    }
-
-    if (y1 == y2)
-    {
-        FillFlatBottomTriangle(x0, y0, x1, y1, x2, y2, color);
-    }
-    else if (y0 == y1)
-    {
-        FillFlatTopTriangle(x0, y0, x1, y1, x2, y2, color);
-    }
-    else
-    {
-        // Calculate mid-point vertex (Mx, My)
-        int mx = (int)(((x2 - x0) * (y1 - y0)) / (float)(y2 - y0) + x0);
-        int my = y1;
-
-        // Draw flat-bottom triangle
-        FillFlatBottomTriangle(x0, y0, x1, y1, mx, my, color);
-
-        // Draw flat-top triangle
-        FillFlatTopTriangle(x1, y1, mx, my, x2, y2, color);
-    }
-}
-
 vec3_t BarycentricWeights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
     // Find the vectors between the vertices ABC and point p
     vec2_t ac = Vec2Subtract(c, a);
@@ -98,6 +25,112 @@ vec3_t BarycentricWeights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
 
     vec3_t weights = { alpha, beta, gamma };
     return weights;
+}
+
+void DrawTrianglePixel(int x, int y, uint32_t color, vec4_t pointA, vec4_t pointB, vec4_t pointC)
+{
+    vec2_t p = { (float)x, (float)y };
+    vec2_t a = Vec2FromVec4(pointA);
+    vec2_t b = Vec2FromVec4(pointB);
+    vec2_t c = Vec2FromVec4(pointC);
+    vec3_t weights = BarycentricWeights(a, b, c, p);
+    float alpha = weights.x;
+    float beta = weights.y;
+    float gamma = weights.z;
+
+    float interpolatedReciprocalW = (1 / pointA.w) * alpha +
+        (1 / pointB.w) * beta + (1 / pointC.w) * gamma;
+    // Adjust 1/w so closer pixels have smaller values.
+    float depthValue = 1.0f - interpolatedReciprocalW;
+    // Only draw pixel if depth value is less than previously stored
+    if (depthValue < g_zBuffer[(y * g_windowWidth) + x])
+    {
+        g_zBuffer[(y * g_windowWidth) + x] = depthValue;
+        DrawPixel(x, y, color);
+    }
+}
+
+void DrawFilledTriangle(vec4_t a, vec4_t b, vec4_t c, uint32_t color)
+{
+    // First, sort vertices by descending y coordinate
+    if (a.y > b.y)
+    {
+        Vec4Swap(&a, &b);
+    }
+    if (b.y > c.y)
+    {
+        Vec4Swap(&b, &c);
+    }
+    if (a.y > b.y)
+    {
+        Vec4Swap(&a, &b);
+    }
+    int ax = (int)a.x;
+    int ay = (int)a.y;
+    int bx = (int)b.x;
+    int by = (int)b.y;
+    int cx = (int)c.x;
+    int cy = (int)c.y;
+
+    // Render the upper part of the triangle (flat bottom)
+    float inverseLeftSlope = 0.0f;
+    float inverseRightSlope = 0.0f;
+    if ((by - ay) != 0)
+    {
+        inverseLeftSlope = (float)(bx - ax) / abs(by - ay);
+    }
+    if ((cy - ay) != 0)
+    {
+        inverseRightSlope = (float)(cx - ax) / abs(cy - ay);
+    }
+    if ((by - ay) != 0)
+    {
+        for (int y = ay; y <= by; ++y)
+        {
+            int xStart = (int)(bx + (y - by) * inverseLeftSlope);
+            int xEnd = (int)(ax + (y - ay) * inverseRightSlope);
+            if (xEnd < xStart)
+            {
+                // Make sure we're filling from left to right
+                SwapInt(&xStart, &xEnd);
+            }
+            for (int x = xStart; x < xEnd; ++x)
+            {
+                // Paint the pixel
+                DrawTrianglePixel(x, y, color, a, b, c);
+            }
+        }
+    }
+
+    // Render the lower part of the triangle (flat top)
+    inverseLeftSlope = 0.0f;
+    inverseRightSlope = 0.0f;
+    if ((cy - by) != 0)
+    {
+        inverseLeftSlope = (float)(cx - bx) / abs(cy - by);
+    }
+    if ((cy - ay) != 0)
+    {
+        inverseRightSlope = (float)(cx - ax) / abs(cy - ay);
+    }
+    if ((cy - by) != 0)
+    {
+        for (int y = by; y <= (int)cy; ++y)
+        {
+            int xStart = (int)(bx + (y - by) * inverseLeftSlope);
+            int xEnd = (int)(ax + (y - ay) * inverseRightSlope);
+            if (xEnd < xStart)
+            {
+                // Make sure we're filling from left to right
+                SwapInt(&xStart, &xEnd);
+            }
+            for (int x = xStart; x < xEnd; ++x)
+            {
+                // Paint the pixel
+                DrawTrianglePixel(x, y, color, a, b, c);
+            }
+        }
+    }
 }
 
 void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, vec4_t pointC,
@@ -135,7 +168,14 @@ void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, ve
     int textureIndex = (g_textureWidth * textureY) + textureX;
     if ((textureIndex >= 0) && (textureIndex < (g_textureWidth * g_textureHeight)))
     {
-        DrawPixel(x, y, texture[textureIndex]);
+        // Adjust 1/w so closer pixels have smaller values.
+        float depthValue = 1.0f - interpolatedReciprocalW;
+        // Only draw pixel if depth value is less than previously stored
+        if (depthValue < g_zBuffer[(y * g_windowWidth) + x])
+        {
+            g_zBuffer[(y * g_windowWidth) + x] = depthValue;
+            DrawPixel(x, y, texture[textureIndex]);
+        }
     }
 }
 

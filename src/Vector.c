@@ -2,6 +2,13 @@
 #include "Vector.h"
 #include <math.h>
 
+void Vec2Swap(vec2_t *a, vec2_t *b)
+{
+    vec2_t temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
 // Vector 2D Functions
 float Vec2Length(vec2_t v)
 {
@@ -155,6 +162,13 @@ vec3_t Vec3RotateZ(vec3_t v, float angle)
         .z = v.z,
     };
     return rotated_vector;
+}
+
+void Vec4Swap(vec4_t *a, vec4_t *b)
+{
+    vec4_t temp = *a;
+    *a = *b;
+    *b = temp;
 }
 
 vec4_t Vec4FromVec3(vec3_t v)

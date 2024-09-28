@@ -19,6 +19,7 @@ typedef struct {
 } vec4_t;
 
 // Vector 2D Functions
+void Vec2Swap(vec2_t* a, vec2_t* b);
 float Vec2Length(vec2_t v);
 vec2_t Vec2Add(vec2_t lhs, vec2_t rhs);
 vec2_t Vec2Subtract(vec2_t lhs, vec2_t rhs);
@@ -39,6 +40,9 @@ vec3_t Vec3Normalize(vec3_t v);
 vec3_t Vec3RotateX(vec3_t v, float angle);
 vec3_t Vec3RotateY(vec3_t v, float angle);
 vec3_t Vec3RotateZ(vec3_t v, float angle);
+
+// Vector 4D Functions
+void Vec4Swap(vec4_t* a, vec4_t* b);
 
 // Vector Conversion Functions
 vec4_t Vec4FromVec3(vec3_t v);

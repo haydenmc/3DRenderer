@@ -1,6 +1,7 @@
 #pragma once
 #include "Texture.h"
 #include "Vector.h"
+#define VERTEX_FLOAT_TOLERANCE 0.1f
 
 typedef struct {
     int a;
@@ -16,10 +17,9 @@ typedef struct {
     vec4_t points[3];
     tex2_t texCoords[3];
     uint32_t color;
-    float averageDepth;
 } triangle_t;
 
-void DrawFilledTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
+void DrawFilledTriangle(vec4_t a, vec4_t b, vec4_t c, uint32_t color);
 void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, vec4_t pointC,
     tex2_t uvA, tex2_t uvB, tex2_t uvC);
 void DrawTexturedTriangle(int x0, int y0, float z0, float w0, float u0, float v0,
