@@ -1,5 +1,6 @@
 #include "pch.h"
 #include <array/array.h>
+#include "Camera.h"
 #include "Display.h"
 #include "Lighting.h"
 #include "Matrix.h"
@@ -26,8 +27,9 @@ enum RenderMode
 // Globals
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
-vec3_t g_cameraPosition = { .x = 0, .y = 0, .z = 0 };
+float g_deltaTime = 0;
 light_t g_light;
+mat4_t g_viewMatrix;
 mat4_t g_projectionMatrix;
 triangle_t g_trianglesToRender[MAX_TRIANGLES];
 int g_numTrianglesToRender = 0;
@@ -113,8 +115,28 @@ void ProcessInput(void)
         case SDLK_c:
             g_renderMode = g_renderMode | RENDER_ENABLE_BACK_FACE_CULLING;
             break;
-        case SDLK_d:
+        case SDLK_x:
             g_renderMode = g_renderMode & ~RENDER_ENABLE_BACK_FACE_CULLING;
+            break;
+        case SDLK_SPACE:
+            g_camera.position.y += 3.0f * g_deltaTime;
+            break;
+        case SDLK_LCTRL:
+            g_camera.position.y -= 3.0f * g_deltaTime;
+            break;
+        case SDLK_a:
+            g_camera.yaw += 1.0f * g_deltaTime;
+            break;
+        case SDLK_d:
+            g_camera.yaw -= 1.0f * g_deltaTime;
+            break;
+        case SDLK_w:
+            g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
+            g_camera.position = Vec3Add(g_camera.position, g_camera.forwardVelocity);
+            break;
+        case SDLK_s:
+            g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
+            g_camera.position = Vec3Subtract(g_camera.position, g_camera.forwardVelocity);
             break;
         }
         break;
@@ -129,17 +151,25 @@ void Update(void)
         SDL_Delay((uint32_t)(timeToWait));
     }
 
+    g_deltaTime = (SDL_GetTicks() - g_previousFrameTime) / 1000.0f;
+
     g_previousFrameTime = SDL_GetTicks();
     g_numTrianglesToRender = 0;
 
     // g_Mesh.scale.x -= 0.001f;
     // g_Mesh.scale.y -= 0.001f;
-    g_Mesh.rotation.x += 0.01f;
-    g_Mesh.rotation.y += 0.005f;
+    // g_Mesh.rotation.x += 0.01f;
+    // g_Mesh.rotation.y += 0.005f;
     // g_Mesh.rotation.y += 0.01f;
     //g_Mesh.rotation.z += 0.01f;
-    g_Mesh.translation.z = 5.0f;
+    g_Mesh.translation.z = 4.0f;
 
+    vec3_t cameraUp = { 0.0f, 1.0f, 0.0f };
+    vec3_t cameraTarget = { 0.0f, 0.0f, 1.0f };
+    mat4_t cameraYawRotation = Matrix4MakeRotationY(g_camera.yaw);
+    g_camera.direction = Vec3FromVec4(Matrix4MultiplyV(cameraYawRotation, Vec4FromVec3(cameraTarget)));
+    cameraTarget = Vec3Add(g_camera.position, g_camera.direction);
+    g_viewMatrix = Matrix4MakeLookAt(g_camera.position, cameraTarget, cameraUp);
     mat4_t scaleMatrix = Matrix4MakeScale(g_Mesh.scale.x, g_Mesh.scale.y, g_Mesh.scale.z);
     mat4_t rotationMatrixX = Matrix4MakeRotationX(g_Mesh.rotation.x);
     mat4_t rotationMatrixY = Matrix4MakeRotationY(g_Mesh.rotation.y);
@@ -170,6 +200,7 @@ void Update(void)
         {
             vec4_t transformedVertex = Vec4FromVec3(faceVertices[j]);
             transformedVertex = Matrix4MultiplyV(worldMatrix, transformedVertex);
+            transformedVertex = Matrix4MultiplyV(g_viewMatrix, transformedVertex);
             transformedVertices[j] = transformedVertex;
         }
 
@@ -190,7 +221,8 @@ void Update(void)
         // Cull back-faces if enabled
         if (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING)
         {
-            vec3_t cameraRay = Vec3Subtract(g_cameraPosition, vectorA);
+            vec3_t origin = { 0.0f, 0.0f, 0.0f };
+            vec3_t cameraRay = Vec3Subtract(origin, vectorA);
             float cameraDotNormal = Vec3DotProduct(faceNormal, cameraRay);
             if (cameraDotNormal <= 0)
             {

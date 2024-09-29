@@ -84,6 +84,23 @@ mat4_t Matrix4MakePerspective(float fov, float aspect, float zNear, float zFar)
     return m;
 }
 
+mat4_t Matrix4MakeLookAt(vec3_t eye, vec3_t target, vec3_t up)
+{
+    vec3_t z = Vec3Subtract(target, eye);
+    z = Vec3Normalize(z);
+    vec3_t x = Vec3CrossProduct(up, z);
+    x = Vec3Normalize(x);
+    vec3_t y = Vec3CrossProduct(z, x);
+
+    mat4_t viewMatrix = {{
+        { x.x, x.y, x.z, -Vec3DotProduct(x, eye) },
+        { y.x, y.y, y.z, -Vec3DotProduct(y, eye) },
+        { z.x, z.y, z.z, -Vec3DotProduct(z, eye) },
+        {   0,   0,   0,                       1 }
+    }};
+    return viewMatrix;
+}
+
 mat4_t Matrix4MultiplyM(mat4_t lhs, mat4_t rhs)
 {
     mat4_t result;

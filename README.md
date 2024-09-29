@@ -122,6 +122,14 @@ https://github.com/user-attachments/assets/3e5d3ae1-63ca-42a9-8c04-3d71025cc91e
 
 _[13.Z-Buffer.mp4](/videos/13.Z-Buffer.mp4)_
 
+## 14. Simple Camera
+
+A simple camera that can rotate left/right and translate up/down/forward/back.
+
+https://github.com/user-attachments/assets/3868f03d-e283-4844-b166-73816c83d3f3
+
+_[14.Simple-Camera.mp4](/videos/14.Simple-Camera.mp4)_
+
 # Topics To Review
 
 Concepts that I still lack some total understanding of:
@@ -1036,3 +1044,127 @@ As explained in perspective-correct texture interpolation, the Z depth is not
 linear in screen space across the surface of the triangle. Instead, like
 texture mapping, the reciprocal $`\frac{1}{w}`$ is used instead.
 
+## Camera
+
+Or a "view matrix" is used to transform the 3D scene into a perspective from
+a camera or view.
+
+One approach to doing this is implementing a "look at" function that returns
+a matrix that can transform world vertices into camera space from a certain
+point looking at another point.
+
+The matrix will:
+
+ 1. Translate the whole scene _inversely_ from the camera eye position to the
+    origin (matrix $`M_T`$)
+ 2. Rotating the scene with _reverse_ orientation (matrix $`M_R`$) so the camera
+    is positioned at the origin and facing the positive Z axis (since our
+    renderer is left-handed).
+
+```math
+M_{view} = M_R * M_T =
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13} & 0 \\
+r_{21} & r_{22} & r_{23} & 0 \\
+r_{31} & r_{32} & r_{33} & 0 \\
+0      & 0      & 0      & 1
+\end{bmatrix} *
+\begin{bmatrix}
+1 & 0 & 0 & t_x \\
+0 & 1 & 0 & t_y \\
+0 & 0 & 1 & t_z \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+```
+
+```math
+= \begin{bmatrix}
+r_{11} & r_{12} & r_{13} & (r_{11}t_x + r_{12}t_y + r_{13}t_z) \\
+r_{21} & r_{22} & r_{23} & (r_{21}t_x + r_{22}t_y + r_{23}t_z) \\
+r_{31} & r_{32} & r_{33} & (r_{31}t_x + r_{32}t_y + r_{33}t_z) \\
+0    & 0    & 0    & 1
+\end{bmatrix}
+```
+
+The translation matrix will simply be the negated coordinates of the eye
+position:
+
+```math
+M_T = \begin{bmatrix}
+1 & 0 & 0 & -eye_x \\
+0 & 1 & 0 & -eye_y \\
+0 & 0 & 1 & -eye_z \\
+0 & 0 & 0 & 1 \\
+\end{bmatrix}
+```
+
+For the rotation matrix, we need to compute the forward ($`z`$), right ($`x`$),
+and up ($`y`$) vectors.
+
+```math
+\begin{bmatrix}
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}^{-1}
+```
+
+This matrix is used to convert between coordinate systems. Note, it must
+be _inverted_ (since the scene must move 'around' the camera). An inverted
+matrix can be thought of like an "undo" of the original matrix.
+
+For _orthogonal_ matrices, inversion is a simple matter of transposing (flipping
+so that rows become columns and columns become rows).
+
+```math
+\begin{bmatrix}
+x_x & y_x & z_x & 0 \\
+x_y & y_y & z_y & 0 \\
+x_z & y_z & z_z & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}^{T} =
+\begin{bmatrix}
+x_x & x_y & x_z & 0 \\
+y_x & y_y & y_z & 0 \\
+z_x & z_y & z_z & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+```
+
+Multiplying the rotation and transformation matrices with the values above:
+
+```math
+M_{view} = M_R * M_T =
+\begin{bmatrix}
+x_x & x_y & x_z & 0 \\
+y_x & y_y & y_z & 0 \\
+z_x & z_y & z_z & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix} *
+\begin{bmatrix}
+1 & 0 & 0 & -eye_x \\
+0 & 1 & 0 & -eye_y \\
+0 & 0 & 1 & -eye_z \\
+0 & 0 & 0 & 1 \\
+\end{bmatrix}
+```
+
+```math
+= \begin{bmatrix}
+x_x & x_y & x_z & (-x_x eye_x - x_y eye_y -x_z eye_z) \\
+y_x & y_y & y_z & (-y_x eye_x - y_y eye_y -y_z eye_z) \\
+z_x & z_y & z_z & (-z_x eye_x - z_y eye_y -z_z eye_z) \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+```
+
+The last column can be simplified using dot product:
+
+```math
+= \begin{bmatrix}
+x_x & x_y & x_z & -dot(x, eye) \\
+y_x & y_y & y_z & -dot(y, eye) \\
+z_x & z_y & z_z & -dot(z, eye) \\
+0 & 0 & 0 & 1
+\end{bmatrix}

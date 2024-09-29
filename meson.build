@@ -26,6 +26,7 @@ executable('renderer',
     c_pch: 'src/pch.h',
     include_directories: include_directories('vendor'),
     sources: [
+        'src/Camera.c',
         'src/Display.c',
         'src/Lighting.c',
         'src/Main.c',
