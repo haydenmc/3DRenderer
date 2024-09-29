@@ -1,6 +1,7 @@
 #include "pch.h"
 #include <array/array.h>
 #include "Camera.h"
+#include "Clipping.h"
 #include "Display.h"
 #include "Lighting.h"
 #include "Matrix.h"
@@ -20,7 +21,7 @@ enum RenderMode
 
 // Constants
 #define MAX_TRIANGLES 10000
-#define PROJECTION_FOV ((float)M_PI / 3.0f)
+#define PROJECTION_FOV_Y ((float)M_PI / 3.0f)
 #define PROJECTION_Z_NEAR 0.1f
 #define PROJECTION_Z_FAR 100.0f
 
@@ -46,8 +47,12 @@ void Setup(void)
         g_windowWidth,
         g_windowHeight
     );
-    g_projectionMatrix = Matrix4MakePerspective(PROJECTION_FOV,
-        (g_windowHeight / (float)g_windowWidth), PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
+    float aspectX = g_windowWidth / (float)g_windowHeight;
+    float aspectY = g_windowHeight / (float)g_windowWidth;
+    g_projectionMatrix = Matrix4MakePerspective(PROJECTION_FOV_Y, aspectY,
+        PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
+    float fovX = atanf(tanf(PROJECTION_FOV_Y / 2.0f) * aspectX) * 2.0f;
+    InitFrustumPlanes(fovX, PROJECTION_FOV_Y, PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
     g_light = (light_t){
         .direction = Vec3Normalize((vec3_t){
              .x = 0,
@@ -56,8 +61,8 @@ void Setup(void)
         };
 
     // F22
-    LoadObjFileData("./assets/f22.obj");
-    LoadPngTextureData("./assets/f22.png");
+    // LoadObjFileData("./assets/f22.obj");
+    // LoadPngTextureData("./assets/f22.png");
     // F117
     // LoadObjFileData("./assets/f117.obj");
     // LoadPngTextureData("./assets/f117.png");
@@ -71,8 +76,8 @@ void Setup(void)
     // LoadObjFileData("./assets/crab.obj");
     // LoadPngTextureData("./assets/crab.png");
     // Cube
-    // LoadObjFileData("./assets/cube.obj");
-    // LoadPngTextureData("./assets/cube.png");
+    LoadObjFileData("./assets/cube.obj");
+    LoadPngTextureData("./assets/cube.png");
 
     // Test Mesh Data
     // LoadCubeMeshData();
@@ -192,8 +197,6 @@ void Update(void)
         faceVertices[1] = g_Mesh.vertices[meshFace.b];
         faceVertices[2] = g_Mesh.vertices[meshFace.c];
 
-        triangle_t projectedTriangle;
-
         // Transform vertices
         vec4_t transformedVertices[3];
         for (int j = 0; j < 3; ++j)
@@ -215,9 +218,6 @@ void Update(void)
         vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
         faceNormal = Vec3Normalize(faceNormal);
 
-        // Calculate lighting
-        projectedTriangle.color = LightCalculateColorForFace(faceNormal, g_light, meshFace.color);
-
         // Cull back-faces if enabled
         if (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING)
         {
@@ -230,34 +230,55 @@ void Update(void)
             }
         }
 
-        // Project to screen space
-        for (int j = 0; j < 3; ++j)
+        // Clipping
+        polygon_t polygon = CreatePolygonFromTriangle(
+            Vec3FromVec4(transformedVertices[0]),
+            Vec3FromVec4(transformedVertices[1]),
+            Vec3FromVec4(transformedVertices[2]),
+            meshFace.a_uv,
+            meshFace.b_uv,
+            meshFace.c_uv);
+        polygon = ClipPolygon(polygon);
+        // Break polygon into triangles
+        triangle_t clippedTriangles[MAX_POLYGON_TRIANGLES];
+        int numClippedTriangles = TrianglesFromPolygon(polygon, clippedTriangles);
+
+        for (int t = 0; t < numClippedTriangles; ++t)
         {
-            vec4_t projectedPoint = Matrix4MultiplyVProject(g_projectionMatrix,
-                transformedVertices[j]);
+            triangle_t clippedTriangle = clippedTriangles[t];
+            triangle_t projectedTriangle;
+            projectedTriangle.color = LightCalculateColorForFace(faceNormal, g_light,
+                meshFace.color);
 
-            // Scale from screen space to actual screen size
-            projectedPoint.x *= (g_windowWidth / 2.0f);
-            projectedPoint.y *= (g_windowHeight / 2.0f);
+            // Project to screen space
+            for (int j = 0; j < 3; ++j)
+            {
+                vec4_t projectedPoint = Matrix4MultiplyVProject(g_projectionMatrix,
+                    clippedTriangle.points[j]);
 
-            // Invert the y values to account for flipped screen y coordinates
-            projectedPoint.y *= -1;
+                // Scale from screen space to actual screen size
+                projectedPoint.x *= (g_windowWidth / 2.0f);
+                projectedPoint.y *= (g_windowHeight / 2.0f);
 
-            // Translate points to the middle of the screen
-            projectedPoint.x += (g_windowWidth / 2.0f);
-            projectedPoint.y += (g_windowHeight / 2.0f);
+                // Invert the y values to account for flipped screen y coordinates
+                projectedPoint.y *= -1;
 
-            projectedTriangle.points[j] = (vec4_t){ .x = projectedPoint.x, .y = projectedPoint.y,
-                .z = projectedPoint.z, .w = projectedPoint.w };
+                // Translate points to the middle of the screen
+                projectedPoint.x += (g_windowWidth / 2.0f);
+                projectedPoint.y += (g_windowHeight / 2.0f);
+
+                projectedTriangle.points[j] = (vec4_t){ .x = projectedPoint.x, .y = projectedPoint.y,
+                    .z = projectedPoint.z, .w = projectedPoint.w };
+            }
+
+            // Populate texture coordinates
+            projectedTriangle.texCoords[0] = (tex2_t){ clippedTriangle.texCoords[0].u, clippedTriangle.texCoords[0].v };
+            projectedTriangle.texCoords[1] = (tex2_t){ clippedTriangle.texCoords[1].u, clippedTriangle.texCoords[1].v };
+            projectedTriangle.texCoords[2] = (tex2_t){ clippedTriangle.texCoords[2].u, clippedTriangle.texCoords[2].v };
+
+            g_trianglesToRender[g_numTrianglesToRender] = projectedTriangle;
+            g_numTrianglesToRender++;
         }
-
-        // Populate texture coordinates
-        projectedTriangle.texCoords[0] = (tex2_t){ meshFace.a_uv.u, meshFace.a_uv.v };
-        projectedTriangle.texCoords[1] = (tex2_t){ meshFace.b_uv.u, meshFace.b_uv.v };
-        projectedTriangle.texCoords[2] = (tex2_t){ meshFace.c_uv.u, meshFace.c_uv.v };
-
-        g_trianglesToRender[g_numTrianglesToRender] = projectedTriangle;
-        g_numTrianglesToRender++;
     }
 }
 

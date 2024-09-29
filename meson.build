@@ -27,6 +27,7 @@ executable('renderer',
     include_directories: include_directories('vendor'),
     sources: [
         'src/Camera.c',
+        'src/Clipping.c',
         'src/Display.c',
         'src/Lighting.c',
         'src/Main.c',

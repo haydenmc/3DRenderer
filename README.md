@@ -130,6 +130,15 @@ https://github.com/user-attachments/assets/3868f03d-e283-4844-b166-73816c83d3f3
 
 _[14.Simple-Camera.mp4](/videos/14.Simple-Camera.mp4)_
 
+## 15. Frustum Clipping
+
+Meshes are now clipped against the edges of the camera frustum, adjusting
+triangle and texture coordinates to only draw what is visible.
+
+https://github.com/user-attachments/assets/aba4b26e-5a2c-4350-9074-f283bc5857b1
+
+_[15.Frustum-Clipping.mp4](/videos/15.Frustum-Clipping.mp4)_
+
 # Topics To Review
 
 Concepts that I still lack some total understanding of:
@@ -1168,3 +1177,235 @@ y_x & y_y & y_z & -dot(y, eye) \\
 z_x & z_y & z_z & -dot(z, eye) \\
 0 & 0 & 0 & 1
 \end{bmatrix}
+```
+
+## Clipping
+
+Clipping is the process of removing objects or line segments that are outside
+the viewing volume.
+
+For frustum clipping, six planes are used:
+
+ - Top
+ - Bottom
+ - Left
+ - Right
+ - Near
+ - Far
+
+![Illustration of the frustum with a triangle being clipped](/images/frustum-clipping.png)
+
+A plane is defined by a point $`P`$ and a normal vector $`\vec{n}`$.
+
+### Calculating the Frustum Planes
+
+![Illustration of right frustum plane calculation set-up](/images/right-frustum-plane.png)
+
+Notably, the camera origin point is present on _every_ frustum plane. So it
+makes for a convenient starting point $`P`$.
+
+To calculate the right frustum plane, simply draw the normal vector at 90
+degrees from the right camera boundary vector ($`\frac{fov}{2}`$ from origin)
+and calculate the X and Y components of the normal vector using trig functions.
+
+```math
+P = (0, 0, 0)
+```
+
+```math
+\vec{n}_x = -\cos{\frac{fov}{2}}
+```
+
+```math
+\vec{n}_y = 0
+```
+
+```math
+\vec{n}_z = \sin{\frac{fov}{2}}
+```
+
+A similar process can be used for the left, top, and bottom planes.
+
+#### Right Frustum Plane
+
+```math
+\vec{n} = ( -\cos{\frac{fov}{2}}, 0, \sin{\frac{fov}{2}} )
+```
+
+#### Left Frustum Plane
+
+```math
+\vec{n} = ( \cos{\frac{fov}{2}}, 0, \sin{\frac{fov}{2}} )
+```
+
+#### Top Frustum Plane
+
+```math
+\vec{n} = ( 0, -\cos{\frac{fov}{2}}, \sin{\frac{fov}{2}} )
+```
+
+#### Bottom Frustum Plane
+
+```math
+\vec{n} = ( 0, \cos{\frac{fov}{2}}, \sin{\frac{fov}{2}} )
+```
+
+#### Near Frustum Plane
+
+Unlike the other planes, the point $`P`$ is offset from camera origin. The
+normal vector is straight out along the $`Z`$ axis.
+
+```math
+P = ( 0, 0, z_{near} )
+```
+
+```math
+\vec{n} = (0, 0, 1)
+```
+
+#### Far Frustum Plane
+
+Similarly, for the far plane:
+
+```math
+P = ( 0, 0, z_{far} )
+```
+
+```math
+\vec{n} = (0, 0, -1)
+```
+
+The negative $`\vec{n}_z`$ value is notable because it denotes which direction
+is considered "inside" the plane versus outside.
+
+### Determining Whether Points are Inside, Outside, or on a Plane
+
+A point $`Q`$ will be "on" the plane if $`(Q - P) \cdot \vec{n} = 0`$
+
+![Illustration of point Q on the plane](/images/point-on-plane.png)
+
+A point $`Q`$ will be "inside" the plane if $`(Q - P) \cdot \vec{n} > 0`$
+
+A point $`Q`$ will be "outside" the plane if $`(Q - P) \cdot \vec{n} < 0`$
+
+### Determining Intersection of Lines with Planes
+
+The linear interpolation equation allows us to calculate any point along a line:
+
+```math
+I = Q_1 + t(Q_2 - Q_1)
+```
+
+The interpolation factor $`t`$ describes the amount $`0 - 1`$ along the line
+between points $`Q_1`$ and $`Q_2`$.
+
+Given a plane that intersects the line between $`Q_1`$ and $`Q_2`$, we need to
+determine the value of $`t`$ that provides us with the intersection point.
+
+![Illustration of a line intersecting a plane](/images/plane-line-intersection.png)
+
+You can use the dot product to determine each point's relationship with the
+plane:
+
+```math
+dot_{Q_1} = \vec{n} \cdot (Q_1 - P)
+```
+
+```math
+dot_{Q_2} = \vec{n} \cdot (Q_2 - P)
+```
+
+We can use these along with the linear interpolation equation:
+
+```math
+I = Q_1 + t(Q_2 - Q_1)
+```
+
+```math
+(I - P) = (Q_1 - P) + t((Q_2 - P) - (Q_1 - P))
+```
+
+An dot product each component with $`\vec{n}`$...
+
+```math
+\vec{n} \cdot (I - P) = \vec{n} \cdot (Q_1 - P) + t(\vec{n} \cdot (Q_2 - P) - \vec{n} \cdot (Q_1 - P))
+```
+
+We know the value of $`\vec{n} \cdot (I - P)`$ is $`0`$ because it is on the
+plane. Simplifying:
+
+```math
+0 = dot_{Q_1} + t(dot_{Q_2} - dot_{Q_1})
+```
+
+We need to isolate $`t`$ to determine the intersection point.
+
+```math
+t = \frac{-dot{Q_1}}{dot_{Q_2} - dot_{Q_1}}
+```
+
+or
+
+```math
+t = \frac{dot{Q_1}}{dot_{Q_1} - dot_{Q_2}}
+```
+
+### How to Clip a Polygon
+
+First, list each of the vertices along the boundary of the polygon and
+determine if each is inside or outside of the plane. The lines with vertices
+that straddle the boundary must be clipped, and the intersection point should
+be added to both lists.
+
+| Inside  | Outside |
+|---------|---------|
+| $`I_1`$ | $`Q_1`$ |
+| $`Q_2`$ | $`I_1`$ |
+| $`Q_3`$ | $`I_2`$ |
+| $`Q_4`$ | $`Q_5`$ |
+| $`I_2`$ |         |
+
+![Illustration of vertices selected for clipping along a plane boundary](/images/vertices-to-clip.png)
+
+The resulting polygon is the set of points from the "inside" vertices list.
+
+This operation needs to be repeated for each plane in the view frustum in order
+to achieve frustum space clipping.
+
+### Turning a Clipped Polygon Back Into Triangles
+
+To turn a polygon back into a set of triangles, we can simply iterate through
+sets of 3 vertices like so:
+
+```
+for (i = 0; i < (num_vertices - 2); ++i) {
+    index0 = 0;
+    index1 = i + 1;
+    index2 = i + 2;
+
+    create_triangle(index0, index1, index2);
+}
+```
+
+### Clipping UV Coordinates
+
+UV coordinates for triangles can be clipped via linear interpolation using same
+interpolation factor that produces the new vertices along the edges of the
+clipping plane.
+
+### Homogeneous Clipping
+
+Usually, graphics pipelines will perform clipping _after_ projection but before
+perspective divide. There are several advantages to doing this:
+
+ - Perspective divide is where x, y, and z are divided by w. Thus, before
+   perspective divide, every vertex that is inside the frustum is between
+   $`-1 * w`$ and $`1 * w`$, making frustum culling as trivial as comparing
+   each component against $`w`$.
+ - Texture coordinates can still be interpolated linearly in this space, since
+   the perspective divide has not happened yet.
+ - Division by zero is avoided, since clipping and culling are against
+   $`z_{near}`$.
+
+An additional resource on homogeneous clipping:
+https://fabiensanglard.net/polygon_codec/index.php

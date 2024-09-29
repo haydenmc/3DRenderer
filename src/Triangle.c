@@ -29,6 +29,10 @@ vec3_t BarycentricWeights(vec2_t a, vec2_t b, vec2_t c, vec2_t p) {
 
 void DrawTrianglePixel(int x, int y, uint32_t color, vec4_t pointA, vec4_t pointB, vec4_t pointC)
 {
+    if ((x >= g_windowWidth) || (y >= g_windowHeight))
+    {
+        return;
+    }
     vec2_t p = { (float)x, (float)y };
     vec2_t a = Vec2FromVec4(pointA);
     vec2_t b = Vec2FromVec4(pointB);
@@ -136,6 +140,10 @@ void DrawFilledTriangle(vec4_t a, vec4_t b, vec4_t c, uint32_t color)
 void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, vec4_t pointC,
     tex2_t uvA, tex2_t uvB, tex2_t uvC)
 {
+    if ((x >= g_windowWidth) || (y >= g_windowHeight))
+    {
+        return;
+    }
     vec2_t p = { (float)x, (float)y };
     vec2_t a = Vec2FromVec4(pointA);
     vec2_t b = Vec2FromVec4(pointB);
@@ -171,7 +179,7 @@ void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, ve
         // Adjust 1/w so closer pixels have smaller values.
         float depthValue = 1.0f - interpolatedReciprocalW;
         // Only draw pixel if depth value is less than previously stored
-        if (depthValue < g_zBuffer[(y * g_windowWidth) + x])
+                  if (depthValue < g_zBuffer[(y * g_windowWidth) + x])
         {
             g_zBuffer[(y * g_windowWidth) + x] = depthValue;
             DrawPixel(x, y, texture[textureIndex]);
