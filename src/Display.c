@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Display.h"
 
-static int g_windowWidth = 800;
-static int g_windowHeight = 600;
+static int g_windowWidth = 640;
+static int g_windowHeight = 360;
 static SDL_Window* g_window = NULL;
 static SDL_Renderer* g_renderer = NULL;
 static uint32_t* g_colorBuffer = NULL;
@@ -40,15 +40,15 @@ bool InitializeWindow(void)
 
     SDL_DisplayMode displayMode;
     SDL_GetCurrentDisplayMode(0, &displayMode);
-    g_windowWidth = displayMode.w;
-    g_windowHeight = displayMode.h;
+    int fullscreenWidth = displayMode.w;
+    int fullscreenHeight = displayMode.h;
 
     g_window = SDL_CreateWindow(
         NULL,
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        g_windowWidth,
-        g_windowHeight,
+        fullscreenWidth,
+        fullscreenHeight,
         SDL_WINDOW_BORDERLESS
     );
     if (!g_window)

@@ -43,8 +43,8 @@ void Setup(void)
         };
 
     // F22
-    // LoadObjFileData("./assets/f22.obj");
-    // LoadPngTextureData("./assets/f22.png");
+    LoadObjFileData("./assets/f22.obj");
+    LoadPngTextureData("./assets/f22.png");
     // F117
     // LoadObjFileData("./assets/f117.obj");
     // LoadPngTextureData("./assets/f117.png");
@@ -58,8 +58,8 @@ void Setup(void)
     // LoadObjFileData("./assets/crab.obj");
     // LoadPngTextureData("./assets/crab.png");
     // Cube
-    LoadObjFileData("./assets/cube.obj");
-    LoadPngTextureData("./assets/cube.png");
+    // LoadObjFileData("./assets/cube.obj");
+    // LoadPngTextureData("./assets/cube.png");
 
     // Test Mesh Data
     // LoadCubeMeshData();
@@ -151,8 +151,8 @@ void Update(void)
 
     // g_Mesh.scale.x -= 0.001f;
     // g_Mesh.scale.y -= 0.001f;
-    // g_Mesh.rotation.x += 0.01f;
-    // g_Mesh.rotation.y += 0.005f;
+    g_Mesh.rotation.x += 0.01f;
+    g_Mesh.rotation.y += 0.005f;
     // g_Mesh.rotation.y += 0.01f;
     //g_Mesh.rotation.z += 0.01f;
     g_Mesh.translation.z = 4.0f;
