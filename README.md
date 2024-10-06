@@ -148,6 +148,14 @@ https://github.com/user-attachments/assets/4780edc7-8dd7-46f6-9233-aebe866caf5a
 
 _[16.Camera-Adjustments.mp4](/videos/16.Camera-Adjustments.mp4)_
 
+## 17. Multiple Meshes
+
+Multiple meshes can now be rendered in the scene.
+
+https://github.com/user-attachments/assets/a3c1ed87-0e6b-478b-82dd-79c90350c190
+
+_[17.Multiple-Meshes.mp4](/videos/17.Multiple-Meshes.mp4)_
+
 # Topics To Review
 
 Concepts that I still lack some total understanding of:

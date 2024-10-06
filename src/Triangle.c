@@ -137,13 +137,16 @@ void DrawFilledTriangle(vec4_t a, vec4_t b, vec4_t c, uint32_t color)
     }
 }
 
-void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, vec4_t pointC,
+void DrawTexel(int x, int y, upng_t* texture, vec4_t pointA, vec4_t pointB, vec4_t pointC,
     tex2_t uvA, tex2_t uvB, tex2_t uvC)
 {
     if ((x >= GetWindowWidth()) || (y >= GetWindowHeight()))
     {
         return;
     }
+    int textureWidth = upng_get_width(texture);
+    int textureHeight = upng_get_height(texture);
+    uint32_t* textureBuffer = (uint32_t*)upng_get_buffer(texture);
     vec2_t p = { (float)x, (float)y };
     vec2_t a = Vec2FromVec4(pointA);
     vec2_t b = Vec2FromVec4(pointB);
@@ -171,10 +174,10 @@ void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, ve
     interpolatedV = interpolatedV < 0.0f ? 0.0f :
         (interpolatedV > 1.0f ? (interpolatedV - floorf(interpolatedV)) : interpolatedV);
 
-    int textureX = (int)(interpolatedU * g_textureWidth);
-    int textureY = (int)(interpolatedV * g_textureHeight);
-    int textureIndex = (g_textureWidth * textureY) + textureX;
-    if ((textureIndex >= 0) && (textureIndex < (g_textureWidth * g_textureHeight)))
+    int textureX = (int)(interpolatedU * textureWidth);
+    int textureY = (int)(interpolatedV * textureHeight);
+    int textureIndex = (textureWidth * textureY) + textureX;
+    if ((textureIndex >= 0) && (textureIndex < (textureWidth * textureHeight)))
     {
         // Adjust 1/w so closer pixels have smaller values.
         float depthValue = 1.0f - interpolatedReciprocalW;
@@ -182,7 +185,7 @@ void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, ve
         if (depthValue < GetZBufferValue(x, y))
         {
             SetZBufferValue(x, y, depthValue);
-            DrawPixel(x, y, texture[textureIndex]);
+            DrawPixel(x, y, textureBuffer[textureIndex]);
         }
     }
 }
@@ -190,7 +193,7 @@ void DrawTexel(int x, int y, uint32_t* texture, vec4_t pointA, vec4_t pointB, ve
 void DrawTexturedTriangle(int x0, int y0, float z0, float w0, float u0, float v0,
     int x1, int y1, float z1, float w1, float u1, float v1,
     int x2, int y2, float z2, float w2, float u2, float v2,
-    uint32_t* texture)
+    upng_t* texture)
 {
     // First, sort vertices by ascending y coordinate
     if (y0 > y1)

@@ -2,74 +2,16 @@
 #include <array/array.h>
 #include "Mesh.h"
 
-// uint32_t g_faceColors[] = {
-//     0xFF0000FF,
-//     0xFF00FF00,
-//     0xFF00FFFF,
-//     0xFFFF0000,
-//     0xFFFF00FF,
-//     0xFFFFFF00,
-// };
+#define MAX_MESHES 16
 
 uint32_t g_faceColors[] = {
     0xFF999999,
 };
 
-vec3_t g_cubeVertices[N_CUBE_VERTICES] = {
-    { .x = -1, .y = -1, .z = -1 }, // 1
-    { .x = -1, .y =  1, .z = -1 }, // 2
-    { .x =  1, .y =  1, .z = -1 }, // 3
-    { .x =  1, .y = -1, .z = -1 }, // 4
-    { .x =  1, .y =  1, .z =  1 }, // 5
-    { .x =  1, .y = -1, .z =  1 }, // 6
-    { .x = -1, .y =  1, .z =  1 }, // 7
-    { .x = -1, .y = -1, .z =  1 }, // 8
-};
+static mesh_t g_meshes[MAX_MESHES];
+static int g_meshCount = 0;
 
-face_t g_cubeFaces[N_CUBE_FACES] = {
-    // front
-    { .a = 1, .b = 2, .c = 3, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 1, .b = 3, .c = 4, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // right
-    { .a = 4, .b = 3, .c = 5, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 4, .b = 5, .c = 6, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // back
-    { .a = 6, .b = 5, .c = 7, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 6, .b = 7, .c = 8, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // left
-    { .a = 8, .b = 7, .c = 2, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 8, .b = 2, .c = 1, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // top
-    { .a = 2, .b = 7, .c = 5, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 2, .b = 5, .c = 3, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF },
-    // bottom
-    { .a = 6, .b = 8, .c = 1, .a_uv = { 0, 1 }, .b_uv = { 0, 0 }, .c_uv = { 1, 0 }, .color = 0xFFFFFFFF },
-    { .a = 6, .b = 1, .c = 4, .a_uv = { 0, 1 }, .b_uv = { 1, 0 }, .c_uv = { 1, 1 }, .color = 0xFFFFFFFF }
-};
-
-mesh_t g_Mesh = {
-    .vertices = NULL,
-    .faces = NULL,
-    .rotation = { 0, 0, 0 },
-    .scale = { 1.0f, 1.0f, 1.0f },
-    .translation = { 0, 0, 0 }
-};
-
-void LoadCubeMeshData(void)
-{
-    for (int i = 0; i < N_CUBE_VERTICES; ++i)
-    {
-        vec3_t cubeVertex = g_cubeVertices[i];
-        array_push(g_Mesh.vertices, cubeVertex);
-    }
-    for (int i = 0; i < N_CUBE_FACES; ++i)
-    {
-        face_t cubeFace = g_cubeFaces[i];
-        array_push(g_Mesh.faces, cubeFace);
-    }
-}
-
-void LoadObjFileData(char* filename)
+void LoadMeshObjData(mesh_t* targetMesh, char* filename)
 {
     FILE* objFile = fopen(filename, "r");
     char line[256];
@@ -86,7 +28,7 @@ void LoadObjFileData(char* filename)
             tex2_t textureCoordinate;
             if (sscanf(line, "v %f %f %f", &vertex.x, &vertex.y, &vertex.z) == 3)
             {
-                array_push(g_Mesh.vertices, vertex);
+                array_push(targetMesh->vertices, vertex);
             }
             else if (sscanf(line, "vt %f %f", &textureCoordinate.u, &textureCoordinate.v) == 2)
             {
@@ -112,7 +54,7 @@ void LoadObjFileData(char* filename)
                 {
                     ++colorIndex;
                 }
-                array_push(g_Mesh.faces, face);
+                array_push(targetMesh->faces, face);
             }
         }
         array_free(textureCoordinates);
@@ -123,5 +65,67 @@ void LoadObjFileData(char* filename)
         int error = errno;
         printf("error %d", error);
         exit(1);
+    }
+}
+
+void LoadMeshPngData(mesh_t* targetMesh, char* texturePngFile)
+{
+    upng_t* pngImage = upng_new_from_file(texturePngFile);
+    if (pngImage != NULL)
+    {
+        upng_decode(pngImage);
+        if (upng_get_error(pngImage) == UPNG_EOK)
+        {
+            uint32_t* textureBuffer = (uint32_t*)upng_get_buffer(pngImage);
+            int textureWidth = upng_get_width(pngImage);
+            int textureHeight = upng_get_height(pngImage);
+
+            // Convert to ARGB8888
+            for (int i = 0; i < textureWidth * textureHeight; ++i)
+            {
+                uint32_t color = textureBuffer[i];
+                uint32_t a = (color & 0xFF000000);
+                uint32_t r = (color & 0x00FF0000) >> 16;
+                uint32_t g = (color & 0x0000FF00);
+                uint32_t b = (color & 0x000000FF) << 16;
+                textureBuffer[i] = (a | r | g | b);
+            }
+
+            // Set mesh texture
+            targetMesh->texture = pngImage;
+        }
+    }
+}
+
+void LoadMesh(char *meshObjFile, char *texturePngFile, vec3_t scale,
+    vec3_t rotation, vec3_t translation)
+{
+    mesh_t* targetMesh = &g_meshes[g_meshCount];
+    LoadMeshObjData(targetMesh, meshObjFile);
+    LoadMeshPngData(targetMesh, texturePngFile);
+    targetMesh->scale = scale;
+    targetMesh->rotation = rotation;
+    targetMesh->translation = translation;
+    g_meshCount++;
+}
+
+int GetNumMeshes(void)
+{
+    return g_meshCount;
+}
+
+mesh_t* GetMeshAtIndex(int index)
+{
+    return &g_meshes[index];
+}
+
+void FreeMeshes(void)
+{
+    for (int i = 0; i < g_meshCount; ++i)
+    {
+        mesh_t* mesh = &g_meshes[i];
+        upng_free(mesh->texture);
+        array_free(mesh->faces);
+        array_free(mesh->vertices);
     }
 }
