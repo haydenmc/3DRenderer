@@ -24,9 +24,11 @@ mat4_t g_viewMatrix;
 mat4_t g_projectionMatrix;
 triangle_t g_trianglesToRender[MAX_TRIANGLES];
 int g_numTrianglesToRender = 0;
+static const Uint8* g_keyboardState;
 
 void Setup(void)
 {
+    g_keyboardState = SDL_GetKeyboardState(NULL);
     InitializeLight((vec3_t){ 0.0f, 0.0f, 1.0f });
     float aspectX = GetWindowWidth() / (float)GetWindowHeight();
     float aspectY = GetWindowHeight() / (float)GetWindowWidth();
@@ -107,29 +109,55 @@ void ProcessInput(void)
             case SDLK_x:
                 SetRenderMode(GetRenderMode() & ~RENDER_ENABLE_BACK_FACE_CULLING);
                 break;
-            case SDLK_SPACE:
-                g_camera.position.y += 3.0f * g_deltaTime;
-                break;
-            case SDLK_LCTRL:
-                g_camera.position.y -= 3.0f * g_deltaTime;
-                break;
-            case SDLK_a:
-                g_camera.yaw += 1.0f * g_deltaTime;
-                break;
-            case SDLK_d:
-                g_camera.yaw -= 1.0f * g_deltaTime;
-                break;
-            case SDLK_w:
-                g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
-                g_camera.position = Vec3Add(g_camera.position, g_camera.forwardVelocity);
-                break;
-            case SDLK_s:
-                g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
-                g_camera.position = Vec3Subtract(g_camera.position, g_camera.forwardVelocity);
-                break;
             }
             break;
         }
+    }
+
+    // Camera controls
+    if (g_keyboardState[SDL_SCANCODE_SPACE])
+    {
+        vec3_t newPosition = GetCamera().position;
+        newPosition.y += 3.0f * g_deltaTime;
+        SetCameraPosition(newPosition);
+    }
+    if (g_keyboardState[SDL_SCANCODE_LCTRL])
+    {
+        vec3_t newPosition = GetCamera().position;
+        newPosition.y -= 3.0f * g_deltaTime;
+        SetCameraPosition(newPosition);
+    }
+    if (g_keyboardState[SDL_SCANCODE_W])
+    {
+        camera_t camera = GetCamera();
+        vec3_t forwardVelocity = Vec3Multiply(camera.direction, 5.0f * g_deltaTime);
+        SetCameraPosition(Vec3Add(camera.position, forwardVelocity));
+    }
+    if (g_keyboardState[SDL_SCANCODE_S])
+    {
+        camera_t camera = GetCamera();
+        vec3_t forwardVelocity = Vec3Multiply(camera.direction, 5.0f * g_deltaTime);
+        SetCameraPosition(Vec3Subtract(camera.position, forwardVelocity));
+    }
+    if (g_keyboardState[SDL_SCANCODE_LEFT])
+    {
+        float yaw = GetCamera().yaw;
+        SetCameraYaw(yaw + (1.0f * g_deltaTime));
+    }
+    if (g_keyboardState[SDL_SCANCODE_RIGHT])
+    {
+        float yaw = GetCamera().yaw;
+        SetCameraYaw(yaw - (1.0f * g_deltaTime));
+    }
+    if (g_keyboardState[SDL_SCANCODE_UP])
+    {
+        float pitch = GetCamera().pitch;
+        SetCameraPitch(pitch + (1.0f * g_deltaTime));
+    }
+    if (g_keyboardState[SDL_SCANCODE_DOWN])
+    {
+        float pitch = GetCamera().pitch;
+        SetCameraPitch(pitch - (1.0f * g_deltaTime));
     }
 }
 
@@ -154,12 +182,18 @@ void Update(void)
     //g_Mesh.rotation.z += 0.01f;
     g_Mesh.translation.z = 4.0f;
 
+    camera_t camera = GetCamera();
     vec3_t cameraUp = { 0.0f, 1.0f, 0.0f };
     vec3_t cameraTarget = { 0.0f, 0.0f, 1.0f };
-    mat4_t cameraYawRotation = Matrix4MakeRotationY(g_camera.yaw);
-    g_camera.direction = Vec3FromVec4(Matrix4MultiplyV(cameraYawRotation, Vec4FromVec3(cameraTarget)));
-    cameraTarget = Vec3Add(g_camera.position, g_camera.direction);
-    g_viewMatrix = Matrix4MakeLookAt(g_camera.position, cameraTarget, cameraUp);
+    mat4_t cameraYawRotation = Matrix4MakeRotationY(camera.yaw);
+    mat4_t cameraPitchRotation = Matrix4MakeRotationX(camera.pitch);
+    mat4_t cameraRotation = Matrix4MultiplyM(cameraYawRotation, cameraPitchRotation);
+    vec3_t cameraDirection = Vec3FromVec4(Matrix4MultiplyV(
+        cameraRotation, Vec4FromVec3(cameraTarget)));
+    SetCameraDirection(cameraDirection);
+
+    cameraTarget = Vec3Add(camera.position, cameraDirection);
+    g_viewMatrix = Matrix4MakeLookAt(camera.position, cameraTarget, cameraUp);
     mat4_t scaleMatrix = Matrix4MakeScale(g_Mesh.scale.x, g_Mesh.scale.y, g_Mesh.scale.z);
     mat4_t rotationMatrixX = Matrix4MakeRotationX(g_Mesh.rotation.x);
     mat4_t rotationMatrixY = Matrix4MakeRotationY(g_Mesh.rotation.y);

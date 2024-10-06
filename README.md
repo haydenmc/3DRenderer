@@ -139,6 +139,15 @@ https://github.com/user-attachments/assets/aba4b26e-5a2c-4350-9074-f283bc5857b1
 
 _[15.Frustum-Clipping.mp4](/videos/15.Frustum-Clipping.mp4)_
 
+## 16. Camera Adjustments
+
+Updated input processing to smooth out camera movement. Reduced resolution to
+achieve a retro look with higher frame rates.
+
+https://github.com/user-attachments/assets/4780edc7-8dd7-46f6-9233-aebe866caf5a
+
+_[16.Camera-Adjustments.mp4](/videos/16.Camera-Adjustments.mp4)_
+
 # Topics To Review
 
 Concepts that I still lack some total understanding of:
