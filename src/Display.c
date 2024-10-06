@@ -1,13 +1,34 @@
 #include "pch.h"
 #include "Display.h"
 
-int g_windowWidth = 800;
-int g_windowHeight = 600;
-SDL_Window* g_window = NULL;
-SDL_Renderer* g_renderer = NULL;
-uint32_t* g_colorBuffer = NULL;
-float* g_zBuffer = NULL;
-SDL_Texture* g_colorBufferTexture = NULL;
+static int g_windowWidth = 800;
+static int g_windowHeight = 600;
+static SDL_Window* g_window = NULL;
+static SDL_Renderer* g_renderer = NULL;
+static uint32_t* g_colorBuffer = NULL;
+static float* g_zBuffer = NULL;
+static SDL_Texture* g_colorBufferTexture = NULL;
+enum RenderMode g_renderMode = RENDER_TEXTURED | RENDER_ENABLE_BACK_FACE_CULLING;
+
+int GetWindowWidth(void)
+{
+    return g_windowWidth;
+}
+
+int GetWindowHeight(void)
+{
+    return g_windowHeight;
+}
+
+enum RenderMode GetRenderMode(void)
+{
+    return g_renderMode;
+}
+
+void SetRenderMode(enum RenderMode mode)
+{
+    g_renderMode = mode;
+}
 
 bool InitializeWindow(void)
 {
@@ -45,6 +66,16 @@ bool InitializeWindow(void)
 
     SDL_SetWindowFullscreen(g_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 
+    g_colorBuffer = malloc(sizeof(uint32_t) * g_windowWidth * g_windowHeight);
+    g_zBuffer = malloc(sizeof(float) * g_windowWidth * g_windowHeight);
+    g_colorBufferTexture = SDL_CreateTexture(
+        g_renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        g_windowWidth,
+        g_windowHeight
+    );
+
     return true;
 }
 
@@ -61,10 +92,11 @@ void DrawGrid(int gridSize, uint32_t gridColor)
 
 void DrawPixel(int x, int y, uint32_t color)
 {
-    if ((x > 0) && (x < g_windowWidth) && (y > 0) && (y < g_windowHeight))
+    if ((x < 0) || (x >= g_windowWidth) || (y < 0) || (y >= g_windowHeight))
     {
-        g_colorBuffer[(g_windowWidth * y) + x] = color;
+        return;
     }
+    g_colorBuffer[(g_windowWidth * y) + x] = color;
 }
 
 void DrawFilledRect(int x, int y, int width, int height, uint32_t color)
@@ -135,6 +167,7 @@ void RenderColorBuffer(void)
         NULL,
         NULL
     );
+    SDL_RenderPresent(g_renderer);
 }
 
 void ClearZBuffer(void)
@@ -161,8 +194,28 @@ void ClearColorBuffer(uint32_t color)
 
 void DestroyWindow(void)
 {
+    free(g_colorBuffer);
+    free(g_zBuffer);
     SDL_DestroyTexture(g_colorBufferTexture);
     SDL_DestroyRenderer(g_renderer);
     SDL_DestroyWindow(g_window);
     SDL_Quit();
+}
+
+float GetZBufferValue(int x, int y)
+{
+    if ((x < 0) || (x >= g_windowWidth) || (y < 0) || (y >= g_windowHeight))
+    {
+        return 1.0f;
+    }
+    return g_zBuffer[(g_windowWidth * y) + x];
+}
+
+void SetZBufferValue(int x, int y, float value)
+{
+    if ((x < 0) || (x >= g_windowWidth) || (y < 0) || (y >= g_windowHeight))
+    {
+        return;
+    }
+    g_zBuffer[(g_windowWidth * y) + x] = value;
 }

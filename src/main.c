@@ -10,15 +10,6 @@
 #include "Triangle.h"
 #include "Vector.h"
 
-enum RenderMode
-{
-    RENDER_VERTICES                 = 1 << 0,
-    RENDER_WIREFRAME                = 1 << 1,
-    RENDER_FLAT_SHADING             = 1 << 2,
-    RENDER_TEXTURED                 = 1 << 3,
-    RENDER_ENABLE_BACK_FACE_CULLING = 1 << 4,
-} RenderMode;
-
 // Constants
 #define MAX_TRIANGLES 10000
 #define PROJECTION_FOV_Y ((float)M_PI / 3.0f)
@@ -34,21 +25,12 @@ mat4_t g_viewMatrix;
 mat4_t g_projectionMatrix;
 triangle_t g_trianglesToRender[MAX_TRIANGLES];
 int g_numTrianglesToRender = 0;
-enum RenderMode g_renderMode = RENDER_TEXTURED | RENDER_ENABLE_BACK_FACE_CULLING;
 
 void Setup(void)
 {
-    g_colorBuffer = malloc(sizeof(uint32_t) * g_windowWidth * g_windowHeight);
-    g_zBuffer = malloc(sizeof(float) * g_windowWidth * g_windowHeight);
-    g_colorBufferTexture = SDL_CreateTexture(
-        g_renderer,
-        SDL_PIXELFORMAT_ARGB8888,
-        SDL_TEXTUREACCESS_STREAMING,
-        g_windowWidth,
-        g_windowHeight
-    );
-    float aspectX = g_windowWidth / (float)g_windowHeight;
-    float aspectY = g_windowHeight / (float)g_windowWidth;
+    
+    float aspectX = GetWindowWidth() / (float)GetWindowHeight();
+    float aspectY = GetWindowHeight() / (float)GetWindowWidth();
     g_projectionMatrix = Matrix4MakePerspective(PROJECTION_FOV_Y, aspectY,
         PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
     float fovX = atanf(tanf(PROJECTION_FOV_Y / 2.0f) * aspectX) * 2.0f;
@@ -86,65 +68,71 @@ void Setup(void)
 void ProcessInput(void)
 {
     SDL_Event event;
-    SDL_PollEvent(&event);
-
-    switch (event.type)
+    while (SDL_PollEvent(&event))
     {
-    case SDL_QUIT:
-        g_isRunning = false;
-        break;
-    case SDL_KEYDOWN:
-        switch (event.key.keysym.sym)
+        switch (event.type)
         {
-        case SDLK_ESCAPE:
+        case SDL_QUIT:
             g_isRunning = false;
             break;
-        case SDLK_1:
-            g_renderMode = RENDER_VERTICES | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
-            break;
-        case SDLK_2:
-            g_renderMode = RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
-            break;
-        case SDLK_3:
-            g_renderMode = RENDER_FLAT_SHADING | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
-            break;
-        case SDLK_4:
-            g_renderMode = RENDER_FLAT_SHADING | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
-            break;
-        case SDLK_5:
-            g_renderMode = RENDER_TEXTURED | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
-            break;
-        case SDLK_6:
-            g_renderMode = RENDER_TEXTURED | RENDER_WIREFRAME | (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING);
-            break;
-        case SDLK_c:
-            g_renderMode = g_renderMode | RENDER_ENABLE_BACK_FACE_CULLING;
-            break;
-        case SDLK_x:
-            g_renderMode = g_renderMode & ~RENDER_ENABLE_BACK_FACE_CULLING;
-            break;
-        case SDLK_SPACE:
-            g_camera.position.y += 3.0f * g_deltaTime;
-            break;
-        case SDLK_LCTRL:
-            g_camera.position.y -= 3.0f * g_deltaTime;
-            break;
-        case SDLK_a:
-            g_camera.yaw += 1.0f * g_deltaTime;
-            break;
-        case SDLK_d:
-            g_camera.yaw -= 1.0f * g_deltaTime;
-            break;
-        case SDLK_w:
-            g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
-            g_camera.position = Vec3Add(g_camera.position, g_camera.forwardVelocity);
-            break;
-        case SDLK_s:
-            g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
-            g_camera.position = Vec3Subtract(g_camera.position, g_camera.forwardVelocity);
+        case SDL_KEYDOWN:
+            switch (event.key.keysym.sym)
+            {
+            case SDLK_ESCAPE:
+                g_isRunning = false;
+                break;
+            case SDLK_1:
+                SetRenderMode(RENDER_VERTICES | RENDER_WIREFRAME |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
+            case SDLK_2:
+                SetRenderMode(RENDER_WIREFRAME | (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
+            case SDLK_3:
+                SetRenderMode(RENDER_FLAT_SHADING |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
+            case SDLK_4:
+                SetRenderMode(RENDER_FLAT_SHADING | RENDER_WIREFRAME |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
+            case SDLK_5:
+                SetRenderMode(RENDER_TEXTURED |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
+            case SDLK_6:
+                SetRenderMode(RENDER_TEXTURED | RENDER_WIREFRAME |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
+            case SDLK_c:
+                SetRenderMode(GetRenderMode() | RENDER_ENABLE_BACK_FACE_CULLING);
+                break;
+            case SDLK_x:
+                SetRenderMode(GetRenderMode() & ~RENDER_ENABLE_BACK_FACE_CULLING);
+                break;
+            case SDLK_SPACE:
+                g_camera.position.y += 3.0f * g_deltaTime;
+                break;
+            case SDLK_LCTRL:
+                g_camera.position.y -= 3.0f * g_deltaTime;
+                break;
+            case SDLK_a:
+                g_camera.yaw += 1.0f * g_deltaTime;
+                break;
+            case SDLK_d:
+                g_camera.yaw -= 1.0f * g_deltaTime;
+                break;
+            case SDLK_w:
+                g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
+                g_camera.position = Vec3Add(g_camera.position, g_camera.forwardVelocity);
+                break;
+            case SDLK_s:
+                g_camera.forwardVelocity = Vec3Multiply(g_camera.direction, 5.0f * g_deltaTime);
+                g_camera.position = Vec3Subtract(g_camera.position, g_camera.forwardVelocity);
+                break;
+            }
             break;
         }
-        break;
     }
 }
 
@@ -219,7 +207,7 @@ void Update(void)
         faceNormal = Vec3Normalize(faceNormal);
 
         // Cull back-faces if enabled
-        if (g_renderMode & RENDER_ENABLE_BACK_FACE_CULLING)
+        if (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING)
         {
             vec3_t origin = { 0.0f, 0.0f, 0.0f };
             vec3_t cameraRay = Vec3Subtract(origin, vectorA);
@@ -257,15 +245,15 @@ void Update(void)
                     clippedTriangle.points[j]);
 
                 // Scale from screen space to actual screen size
-                projectedPoint.x *= (g_windowWidth / 2.0f);
-                projectedPoint.y *= (g_windowHeight / 2.0f);
+                projectedPoint.x *= (GetWindowWidth() / 2.0f);
+                projectedPoint.y *= (GetWindowHeight() / 2.0f);
 
                 // Invert the y values to account for flipped screen y coordinates
                 projectedPoint.y *= -1;
 
                 // Translate points to the middle of the screen
-                projectedPoint.x += (g_windowWidth / 2.0f);
-                projectedPoint.y += (g_windowHeight / 2.0f);
+                projectedPoint.x += (GetWindowWidth() / 2.0f);
+                projectedPoint.y += (GetWindowHeight() / 2.0f);
 
                 projectedTriangle.points[j] = (vec4_t){ .x = projectedPoint.x, .y = projectedPoint.y,
                     .z = projectedPoint.z, .w = projectedPoint.w };
@@ -284,6 +272,9 @@ void Update(void)
 
 void Render(void)
 {
+    ClearColorBuffer(0xFF000000);
+    ClearZBuffer();
+
     DrawGrid(10, 0xFF333333);
 
     for (int i = 0; i < g_numTrianglesToRender; ++i)
@@ -308,22 +299,25 @@ void Render(void)
         float u2 = triangleToRender.texCoords[2].u;
         float v2 = triangleToRender.texCoords[2].v;
 
-        if (g_renderMode & RENDER_TEXTURED)
+        if (GetRenderMode() & RENDER_TEXTURED)
         {
             DrawTexturedTriangle(x0, y0, z0, w0, u0, v0,
                 x1, y1, z1, w1, u1, v1,
                 x2, y2, z2, w2, u2, v2, g_meshTexture);
         }
-        if (g_renderMode & RENDER_FLAT_SHADING)
+
+        if (GetRenderMode() & RENDER_FLAT_SHADING)
         {
             DrawFilledTriangle(triangleToRender.points[0], triangleToRender.points[1],
                 triangleToRender.points[2], triangleToRender.color);
         }
-        if (g_renderMode & RENDER_WIREFRAME)
+
+        if (GetRenderMode() & RENDER_WIREFRAME)
         {
             DrawTriangle(x0, y0, x1, y1, x2, y2, 0xFF00FF00);
         }
-        if (g_renderMode & RENDER_VERTICES)
+
+        if (GetRenderMode() & RENDER_VERTICES)
         {
             DrawFilledRect(x0 - 1, y0 - 1, 2, 2, 0xFFFF0000);
             DrawFilledRect(x1 - 1, y1 - 1, 2, 2, 0xFFFF0000);
@@ -332,17 +326,10 @@ void Render(void)
     }
 
     RenderColorBuffer();
-
-    ClearColorBuffer(0xFF000000);
-    ClearZBuffer();
-
-    SDL_RenderPresent(g_renderer);
 }
 
 void FreeResources(void)
 {
-    free(g_colorBuffer);
-    free(g_zBuffer);
     upng_free(g_pngTexture);
     array_free(g_Mesh.faces);
     array_free(g_Mesh.vertices);
