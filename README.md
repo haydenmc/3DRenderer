@@ -3,6 +3,8 @@
 This is my work to build a software 3D renderer as guided by the
 ["Learn Computer Graphics Programming" course by Gustavo Pezzi](https://pikuma.com/courses/learn-3d-computer-graphics-programming).
 
+[My completion certificate](https://courses.pikuma.com/certificates/8shbtcio1s)
+
 # Progress
 
 Here's where I take videos of significant milestones to look back on the
@@ -200,18 +202,44 @@ $$
 
 ## Left vs Right-handed Coordinate Systems
 
-Mainly determines whether Z values grow "into" the screen away from the viewer,
-or "out" of the display toward the viewer.
+The "handedness" of the coordinate system defines how different dimensional axis
+are interpreted.
 
-Left-handed coordinate systems refer to Z values that grow into the screen, as
-used by DirectX.
+ - "Left-handed" coordinate systems define Z values as growing "into" the
+   screen, away from the viewer.
+ - "Right-handed" coordinate systems define Z values as growing "out of" the
+   screen, toward the viewer.
 
-Right-handed coordinate systems refer to Z values that grow out of the screen,
-as used by OpenGL.
+DirectX uses a left-handed coordinate system, while OpenGL uses a right-handed
+coordinate system.
 
 ![Illustration of human hands mnemonic](/images/coordinate-system-hands.png)
 
 _Illustration from https://www.oreilly.com/library/view/learn-arcore/9781788830409_
+
+A separate but related convention is triangle "winding order," or the order in
+which the vertices around the edge of a triangle are traversed. The winding
+order can be clockwise, or counter-clockwise.
+
+The coordinate system and winding order convention can determine how normal
+values should be calculated.
+
+There's additional context in
+[this lesson video](https://courses.pikuma.com/courses/take/learn-computer-graphics-programming/lessons/12297168-handedness-orientation).
+
+### Left Hand Rule
+
+Given a triangle with points $`A`$, $`B`$, $`C`$, point your index finger
+in the direction of the first vector $`(B - A)`$ and your middle finger in the
+direction of the second vector $`(C - A)`$. Your thumb will be pointing in the
+direction of the normal vector.
+
+### Right Hand Rule
+
+Use the same method as above, but with the right hand. Notice that the normal
+direction is inverted given the same triangle.
+
+Physicists normally use the right hand rule.
 
 ## Transformation
 
@@ -1426,3 +1454,41 @@ perspective divide. There are several advantages to doing this:
 
 An additional resource on homogeneous clipping:
 https://fabiensanglard.net/polygon_codec/index.php
+
+## Additional Topics
+
+### Rasterization Rules
+
+Conventions that handle how geometry primitives should be rasterized.
+
+Defined conventions can make sure cases like shared edges can be handled
+properly without gaps or overdraw.
+
+A "fill convention" handles these cases with neighboring triangles. One such
+convention is called the "top left rule," where pixels are defined as "inside"
+a triangle if they are along the top edge of left edge.
+
+[Course video here](https://courses.pikuma.com/courses/take/learn-computer-graphics-programming/lessons/43873235-top-left-rasterization-rule)
+
+### Optimizing Rasterization
+
+ - https://kristoffer-dyrkorn.github.io/triangle-rasterizer/
+
+[Course video here](https://courses.pikuma.com/courses/take/learn-computer-graphics-programming/lessons/43873406-edge-function-barycentric-weights)
+
+### Subpixel Rasterization
+
+Use floating points to represent sub-pixels. Bias towards the center of each
+pixel when calculating geometry (0.5, 0.5).
+
+Fixed-point math becomes important here (vs floating points).
+
+[Course video here](https://courses.pikuma.com/courses/take/learn-computer-graphics-programming/lessons/43873890-subpixel-rasterization)
+
+### Recommended Resources
+
+ - [Foundations of Game Engine Development (Eric Lengyel)](https://foundationsofgameenginedev.com/)
+ - [Graphics Programming Black Book (Michael Abrash)](https://www.drdobbs.com/parallel/graphics-programming-black-book/184404919)
+ - [Texture Mapping Technical Articles (Chris Hecker)](https://www.chrishecker.com/Miscellaneous_Technical_Articles)
+ - [Rasterization Rules & the Edge Function (ScratchAPixel.com)](https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage)
+ - [Rasterization Rules (Microsoft Direct3D)](https://docs.microsoft.com/en-us/windows/win32/direct3d9/rasterization-rules#triangle-rasterization-rules)
