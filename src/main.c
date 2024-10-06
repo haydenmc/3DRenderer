@@ -78,7 +78,8 @@ void ProcessInput(void)
                     (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
                 break;
             case SDLK_2:
-                SetRenderMode(RENDER_WIREFRAME | (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                SetRenderMode(RENDER_WIREFRAME |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
                 break;
             case SDLK_3:
                 SetRenderMode(RENDER_FLAT_SHADING | RENDER_WIREFRAME |
@@ -154,6 +155,118 @@ void ProcessInput(void)
     }
 }
 
+// Model space
+//     -> World space
+//         -> Camera space
+//             -> Clipping
+//                 -> Projection
+//                     -> Image space (NDC)
+//                         -> Screen space
+void ProcessGraphicsPipelineStages(mesh_t* mesh)
+{
+    mat4_t scaleMatrix = Matrix4MakeScale(mesh->scale.x,
+        mesh->scale.y, mesh->scale.z);
+    mat4_t rotationMatrixX = Matrix4MakeRotationX(mesh->rotation.x);
+    mat4_t rotationMatrixY = Matrix4MakeRotationY(mesh->rotation.y);
+    mat4_t rotationMatrixZ = Matrix4MakeRotationZ(mesh->rotation.z);
+    mat4_t translationMatrix = Matrix4MakeTranslation(
+        mesh->translation.x, mesh->translation.y, mesh->translation.z);
+    mat4_t worldMatrix = Matrix4Identity();
+    worldMatrix = Matrix4MultiplyM(scaleMatrix, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(rotationMatrixX, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(rotationMatrixY, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(rotationMatrixZ, worldMatrix);
+    worldMatrix = Matrix4MultiplyM(translationMatrix, worldMatrix);
+
+    int numFaces = array_length(mesh->faces);
+    for (int i = 0; i < numFaces; ++i)
+    {
+        face_t meshFace = mesh->faces[i];
+        vec3_t faceVertices[3];
+        faceVertices[0] = mesh->vertices[meshFace.a];
+        faceVertices[1] = mesh->vertices[meshFace.b];
+        faceVertices[2] = mesh->vertices[meshFace.c];
+
+        // Transform vertices
+        vec4_t transformedVertices[3];
+        for (int j = 0; j < 3; ++j)
+        {
+            vec4_t transformedVertex = Vec4FromVec3(faceVertices[j]);
+            transformedVertex = Matrix4MultiplyV(worldMatrix, transformedVertex);
+            transformedVertex = Matrix4MultiplyV(g_viewMatrix, transformedVertex);
+            transformedVertices[j] = transformedVertex;
+        }
+
+        // Calculate face normal
+        vec3_t faceNormal = GetTriangleNormal(transformedVertices);
+
+        // Cull back-faces if enabled
+        if (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING)
+        {
+            vec3_t cameraRay = Vec3Subtract((vec3_t){ 0.0f, 0.0f, 0.0f },
+                Vec3FromVec4(transformedVertices[0]));
+            float cameraDotNormal = Vec3DotProduct(faceNormal, cameraRay);
+            if (cameraDotNormal <= 0)
+            {
+                continue;
+            }
+        }
+
+        // Clipping
+        polygon_t polygon = CreatePolygonFromTriangle(
+            Vec3FromVec4(transformedVertices[0]),
+            Vec3FromVec4(transformedVertices[1]),
+            Vec3FromVec4(transformedVertices[2]),
+            meshFace.a_uv,
+            meshFace.b_uv,
+            meshFace.c_uv);
+        polygon = ClipPolygon(polygon);
+        // Break polygon into triangles
+        triangle_t clippedTriangles[MAX_POLYGON_TRIANGLES];
+        int numClippedTriangles = TrianglesFromPolygon(polygon, clippedTriangles);
+
+        for (int t = 0; t < numClippedTriangles; ++t)
+        {
+            triangle_t clippedTriangle = clippedTriangles[t];
+            triangle_t projectedTriangle;
+            projectedTriangle.color = LightCalculateColorForFace(faceNormal, meshFace.color);
+
+            // Project to screen space
+            for (int j = 0; j < 3; ++j)
+            {
+                vec4_t projectedPoint = Matrix4MultiplyVProject(g_projectionMatrix,
+                    clippedTriangle.points[j]);
+
+                // Scale from screen space to actual screen size
+                projectedPoint.x *= (GetWindowWidth() / 2.0f);
+                projectedPoint.y *= (GetWindowHeight() / 2.0f);
+
+                // Invert the y values to account for flipped screen y coordinates
+                projectedPoint.y *= -1;
+
+                // Translate points to the middle of the screen
+                projectedPoint.x += (GetWindowWidth() / 2.0f);
+                projectedPoint.y += (GetWindowHeight() / 2.0f);
+
+                projectedTriangle.points[j] = (vec4_t){ .x = projectedPoint.x,
+                    .y = projectedPoint.y, .z = projectedPoint.z, .w = projectedPoint.w };
+            }
+
+            // Populate texture
+            projectedTriangle.texture = mesh->texture;
+            projectedTriangle.texCoords[0] = (tex2_t){
+                clippedTriangle.texCoords[0].u, clippedTriangle.texCoords[0].v };
+            projectedTriangle.texCoords[1] = (tex2_t){
+                clippedTriangle.texCoords[1].u, clippedTriangle.texCoords[1].v };
+            projectedTriangle.texCoords[2] = (tex2_t){
+                clippedTriangle.texCoords[2].u, clippedTriangle.texCoords[2].v };
+
+            g_trianglesToRender[g_numTrianglesToRender] = projectedTriangle;
+            g_numTrianglesToRender++;
+        }
+    }
+}
+
 void Update(void)
 {
     // Calculate delta time
@@ -182,116 +295,7 @@ void Update(void)
     g_numTrianglesToRender = 0;
     for (int meshIndex = 0; meshIndex < GetNumMeshes(); ++meshIndex)
     {
-        mesh_t* currentMesh = GetMeshAtIndex(meshIndex);
-        mat4_t scaleMatrix = Matrix4MakeScale(currentMesh->scale.x,
-            currentMesh->scale.y, currentMesh->scale.z);
-        mat4_t rotationMatrixX = Matrix4MakeRotationX(currentMesh->rotation.x);
-        mat4_t rotationMatrixY = Matrix4MakeRotationY(currentMesh->rotation.y);
-        mat4_t rotationMatrixZ = Matrix4MakeRotationZ(currentMesh->rotation.z);
-        mat4_t translationMatrix = Matrix4MakeTranslation(
-            currentMesh->translation.x, currentMesh->translation.y, currentMesh->translation.z);
-        mat4_t worldMatrix = Matrix4Identity();
-        worldMatrix = Matrix4MultiplyM(scaleMatrix, worldMatrix);
-        worldMatrix = Matrix4MultiplyM(rotationMatrixX, worldMatrix);
-        worldMatrix = Matrix4MultiplyM(rotationMatrixY, worldMatrix);
-        worldMatrix = Matrix4MultiplyM(rotationMatrixZ, worldMatrix);
-        worldMatrix = Matrix4MultiplyM(translationMatrix, worldMatrix);
-
-        int numFaces = array_length(currentMesh->faces);
-        for (int i = 0; i < numFaces; ++i)
-        {
-            face_t meshFace = currentMesh->faces[i];
-            vec3_t faceVertices[3];
-            faceVertices[0] = currentMesh->vertices[meshFace.a];
-            faceVertices[1] = currentMesh->vertices[meshFace.b];
-            faceVertices[2] = currentMesh->vertices[meshFace.c];
-
-            // Transform vertices
-            vec4_t transformedVertices[3];
-            for (int j = 0; j < 3; ++j)
-            {
-                vec4_t transformedVertex = Vec4FromVec3(faceVertices[j]);
-                transformedVertex = Matrix4MultiplyV(worldMatrix, transformedVertex);
-                transformedVertex = Matrix4MultiplyV(g_viewMatrix, transformedVertex);
-                transformedVertices[j] = transformedVertex;
-            }
-
-            // Calculate face normal
-            vec3_t vectorA = Vec3FromVec4(transformedVertices[0]);
-            vec3_t vectorB = Vec3FromVec4(transformedVertices[1]);
-            vec3_t vectorC = Vec3FromVec4(transformedVertices[2]);
-            vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
-            vectorAB = Vec3Normalize(vectorAB);
-            vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
-            vectorAC = Vec3Normalize(vectorAC);
-            vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
-            faceNormal = Vec3Normalize(faceNormal);
-
-            // Cull back-faces if enabled
-            if (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING)
-            {
-                vec3_t origin = { 0.0f, 0.0f, 0.0f };
-                vec3_t cameraRay = Vec3Subtract(origin, vectorA);
-                float cameraDotNormal = Vec3DotProduct(faceNormal, cameraRay);
-                if (cameraDotNormal <= 0)
-                {
-                    continue;
-                }
-            }
-
-            // Clipping
-            polygon_t polygon = CreatePolygonFromTriangle(
-                Vec3FromVec4(transformedVertices[0]),
-                Vec3FromVec4(transformedVertices[1]),
-                Vec3FromVec4(transformedVertices[2]),
-                meshFace.a_uv,
-                meshFace.b_uv,
-                meshFace.c_uv);
-            polygon = ClipPolygon(polygon);
-            // Break polygon into triangles
-            triangle_t clippedTriangles[MAX_POLYGON_TRIANGLES];
-            int numClippedTriangles = TrianglesFromPolygon(polygon, clippedTriangles);
-
-            for (int t = 0; t < numClippedTriangles; ++t)
-            {
-                triangle_t clippedTriangle = clippedTriangles[t];
-                triangle_t projectedTriangle;
-                projectedTriangle.color = LightCalculateColorForFace(faceNormal, meshFace.color);
-
-                // Project to screen space
-                for (int j = 0; j < 3; ++j)
-                {
-                    vec4_t projectedPoint = Matrix4MultiplyVProject(g_projectionMatrix,
-                        clippedTriangle.points[j]);
-
-                    // Scale from screen space to actual screen size
-                    projectedPoint.x *= (GetWindowWidth() / 2.0f);
-                    projectedPoint.y *= (GetWindowHeight() / 2.0f);
-
-                    // Invert the y values to account for flipped screen y coordinates
-                    projectedPoint.y *= -1;
-
-                    // Translate points to the middle of the screen
-                    projectedPoint.x += (GetWindowWidth() / 2.0f);
-                    projectedPoint.y += (GetWindowHeight() / 2.0f);
-
-                    projectedTriangle.points[j] = (vec4_t){ .x = projectedPoint.x, .y = projectedPoint.y,
-                        .z = projectedPoint.z, .w = projectedPoint.w };
-                }
-
-                // Populate texture
-                projectedTriangle.texture = currentMesh->texture;
-                projectedTriangle.texCoords[0] = (tex2_t){
-                    clippedTriangle.texCoords[0].u, clippedTriangle.texCoords[0].v };
-                projectedTriangle.texCoords[1] = (tex2_t){
-                    clippedTriangle.texCoords[1].u, clippedTriangle.texCoords[1].v };
-                projectedTriangle.texCoords[2] = (tex2_t){
-                    clippedTriangle.texCoords[2].u, clippedTriangle.texCoords[2].v };
-
-                g_trianglesToRender[g_numTrianglesToRender] = projectedTriangle;
-                g_numTrianglesToRender++;
-            }
-        }
+        ProcessGraphicsPipelineStages(GetMeshAtIndex(meshIndex));
     }
 }
 

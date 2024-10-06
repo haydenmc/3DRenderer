@@ -54,6 +54,20 @@ void DrawTrianglePixel(int x, int y, uint32_t color, vec4_t pointA, vec4_t point
     }
 }
 
+vec3_t GetTriangleNormal(vec4_t vertices[3])
+{
+    vec3_t vectorA = Vec3FromVec4(vertices[0]);
+    vec3_t vectorB = Vec3FromVec4(vertices[1]);
+    vec3_t vectorC = Vec3FromVec4(vertices[2]);
+    vec3_t vectorAB = Vec3Subtract(vectorB, vectorA);
+    vectorAB = Vec3Normalize(vectorAB);
+    vec3_t vectorAC = Vec3Subtract(vectorC, vectorA);
+    vectorAC = Vec3Normalize(vectorAC);
+    vec3_t faceNormal = Vec3CrossProduct(vectorAB, vectorAC);
+    faceNormal = Vec3Normalize(faceNormal);
+    return faceNormal;
+}
+
 void DrawFilledTriangle(vec4_t a, vec4_t b, vec4_t c, uint32_t color)
 {
     // First, sort vertices by descending y coordinate
