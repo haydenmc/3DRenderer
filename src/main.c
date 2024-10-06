@@ -20,7 +20,6 @@
 bool g_isRunning = false;
 uint32_t g_previousFrameTime = 0;
 float g_deltaTime = 0;
-light_t g_light;
 mat4_t g_viewMatrix;
 mat4_t g_projectionMatrix;
 triangle_t g_trianglesToRender[MAX_TRIANGLES];
@@ -28,19 +27,13 @@ int g_numTrianglesToRender = 0;
 
 void Setup(void)
 {
-    
+    InitializeLight((vec3_t){ 0.0f, 0.0f, 1.0f });
     float aspectX = GetWindowWidth() / (float)GetWindowHeight();
     float aspectY = GetWindowHeight() / (float)GetWindowWidth();
     g_projectionMatrix = Matrix4MakePerspective(PROJECTION_FOV_Y, aspectY,
         PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
     float fovX = atanf(tanf(PROJECTION_FOV_Y / 2.0f) * aspectX) * 2.0f;
     InitFrustumPlanes(fovX, PROJECTION_FOV_Y, PROJECTION_Z_NEAR, PROJECTION_Z_FAR);
-    g_light = (light_t){
-        .direction = Vec3Normalize((vec3_t){
-             .x = 0,
-             .y = 0,
-             .z = 1 })
-        };
 
     // F22
     LoadObjFileData("./assets/f22.obj");
@@ -81,6 +74,10 @@ void ProcessInput(void)
             case SDLK_ESCAPE:
                 g_isRunning = false;
                 break;
+            case SDLK_0:
+                SetRenderMode(RENDER_VERTICES |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
             case SDLK_1:
                 SetRenderMode(RENDER_VERTICES | RENDER_WIREFRAME |
                     (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
@@ -89,19 +86,19 @@ void ProcessInput(void)
                 SetRenderMode(RENDER_WIREFRAME | (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
                 break;
             case SDLK_3:
-                SetRenderMode(RENDER_FLAT_SHADING |
-                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
-                break;
-            case SDLK_4:
                 SetRenderMode(RENDER_FLAT_SHADING | RENDER_WIREFRAME |
                     (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
                 break;
+            case SDLK_4:
+                SetRenderMode(RENDER_FLAT_SHADING |
+                    (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
+                break;
             case SDLK_5:
-                SetRenderMode(RENDER_TEXTURED |
+                SetRenderMode(RENDER_TEXTURED | RENDER_WIREFRAME |
                     (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
                 break;
             case SDLK_6:
-                SetRenderMode(RENDER_TEXTURED | RENDER_WIREFRAME |
+                SetRenderMode(RENDER_TEXTURED |
                     (GetRenderMode() & RENDER_ENABLE_BACK_FACE_CULLING));
                 break;
             case SDLK_c:
@@ -235,8 +232,7 @@ void Update(void)
         {
             triangle_t clippedTriangle = clippedTriangles[t];
             triangle_t projectedTriangle;
-            projectedTriangle.color = LightCalculateColorForFace(faceNormal, g_light,
-                meshFace.color);
+            projectedTriangle.color = LightCalculateColorForFace(faceNormal, meshFace.color);
 
             // Project to screen space
             for (int j = 0; j < 3; ++j)

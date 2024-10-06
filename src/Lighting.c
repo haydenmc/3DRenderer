@@ -1,6 +1,15 @@
 #include "pch.h"
 #include "Lighting.h"
 
+static light_t g_light = {
+    .direction = { 0.0f, 0.0f, 1.0f },
+};
+
+void InitializeLight(vec3_t direction)
+{
+    g_light.direction = direction;
+}
+
 uint32_t LightApplyIntensity(uint32_t originalColor, float factor)
 {
     uint32_t a = (originalColor & 0xFF000000);
@@ -11,12 +20,12 @@ uint32_t LightApplyIntensity(uint32_t originalColor, float factor)
     return newColor;
 }
 
-uint32_t LightCalculateColorForFace(vec3_t faceNormal, light_t light, uint32_t originalColor)
+uint32_t LightCalculateColorForFace(vec3_t faceNormal, uint32_t originalColor)
 {
     // Assume both vectors are normalized.
     // Invert the light direction to get the "source" and compare to the face
     // normal via dot product to determine the "intensity factor"
-    vec3_t lightSourceDirection = Vec3Multiply(light.direction, -1.0f);
+    vec3_t lightSourceDirection = Vec3Multiply(g_light.direction, -1.0f);
     float intensityFactor = Vec3DotProduct(faceNormal, lightSourceDirection);
     // Clamp to [0, 1]
     intensityFactor = min(1.0f, max(0.0f, intensityFactor));
