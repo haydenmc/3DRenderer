@@ -192,7 +192,7 @@ void ClearColorBuffer(uint32_t color)
     }
 }
 
-void DestroyWindow(void)
+void CleanupWindow(void)
 {
     free(g_colorBuffer);
     free(g_zBuffer);

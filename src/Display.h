@@ -29,6 +29,6 @@ void DrawTriangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color
 void RenderColorBuffer(void);
 void ClearZBuffer(void);
 void ClearColorBuffer(uint32_t color);
-void DestroyWindow(void);
+void CleanupWindow(void);
 float GetZBufferValue(int x, int y);
 void SetZBufferValue(int x, int y, float value);

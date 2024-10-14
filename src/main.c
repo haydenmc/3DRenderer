@@ -377,7 +377,7 @@ int main(void)
 
     FreeResources();
 
-    DestroyWindow();
+    CleanupWindow();
 
     return 0;
 }
